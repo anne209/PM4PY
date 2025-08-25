@@ -13,14 +13,9 @@ def import_xes(path_to_xes: str):
 
 # Import des Datensatzes
 log_sepsis = import_xes('sepsis_case.xes')
-<<<<<<< HEAD
 log_sepsis.to_csv('log_sepsis.csv', index=False)
-
 #log_iacs = import_xes('log_iacs.xes')
-#log_iacs.to_csv('log_sepsis.csv', index=False)
-=======
->>>>>>> a65cf6152d71e43e825582ead525453b4ebf06ba
-
+#log_iacs.to_csv('log_iacs.csv', index=False)
 
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
@@ -81,6 +76,20 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     if end_crit is not None:
         selected_end_acts = set(end_acts.keys()) - set(end_crit) #Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
+        drop_mask = pd.Series(False, index=log.index)
+    
+    for item in check_value_activities:
+
+        is_activity = log["concept:name"] == item
+        is_empty = log[item].isna()
+        condition = is_activity & is_empty
+        drop_mask = drop_mask | condition
+
+    problematic_groups = log.loc[drop_mask, "org:group"].value_counts()
+    print("Häufigkeit der Gruppen in fehlerhaften Zeilen:")
+    print(problematic_groups)
+    
+    log.drop(index=log[drop_mask].index, inplace=True)
     
 
     filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False)
