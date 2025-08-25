@@ -13,10 +13,13 @@ def import_xes(path_to_xes: str):
 
 # Import des Datensatzes
 log_sepsis = import_xes('sepsis_case.xes')
+<<<<<<< HEAD
 log_sepsis.to_csv('log_sepsis.csv', index=False)
 
 #log_iacs = import_xes('log_iacs.xes')
 #log_iacs.to_csv('log_sepsis.csv', index=False)
+=======
+>>>>>>> a65cf6152d71e43e825582ead525453b4ebf06ba
 
 
 
@@ -133,7 +136,7 @@ def run_alpha_miner(log):
     pm4py.view_petri_net(net, initial_marking, final_marking)
     return net, initial_marking, final_marking # Ausgabe für Conformance Checking notwendig
 
-net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis)
+net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
 
 # net_iacs, initial_marking_iacs, final_marking_iacs = run_alpha_miner(filtered_log_iacs)
 
@@ -151,11 +154,11 @@ run_heuristic_miner(filtered_log_sepsis)
 def run_inductive_miner(log):
     inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log)
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
+    return inductive_net, initial_marking_inductive, final_marking_inductive
 
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
 
-run_inductive_miner(filtered_log_sepsis)
-
-# run_inductive_miner(filtered_log_iacs)
+# ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs)
 
 # Varianten auflisten
 def show_filter_variants(log):
@@ -210,7 +213,7 @@ def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variab
     return pd.DataFrame(rows)
 
 
-# TBR mit Netz aus Alpha Miner
+# TBR mit Modell aus Alpha Miner
 def tbr_alpha(log, net, initial_marking, final_marking):
     replayed_traces = pm4py.conformance_diagnostics_token_based_replay(log, net, initial_marking, final_marking)
     df_tbr = tbr_list_to_dataframe(replayed_traces)
@@ -250,6 +253,140 @@ plot_tbr_fit_flag(df_tbr_sepsis)
 
 # plot_tbr_fitness_hist(df_tbr_iacs)
 # plot_tbr_fit_flag(df_tbr_iacs)
+
+# Alignments bestimmen mit Modell aus Inductive Miner
+def alignments_inductive(log, net, initial_marking, final_marking):
+    aligned_traces_ind = pm4py.conformance_diagnostics_alignments(log, net, initial_marking, final_marking)
+    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}')
+    return aligned_traces_ind
+
+aligned_traces_ind_sepsis = alignments_inductive(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# aligned_traces_ind_iacs = alignments_inductive(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Visualisierung der Alignments (Histogramm der Alignment-Kosten und Move-Typen)
+def extract_alignment_stats(aligned_traces) -> pd.DataFrame: # Variablennamen etc. evtl. ändern
+    rows = []
+    for i, d in enumerate(aligned_traces):
+        row = {
+            'trace_index': i,
+            'cost': d.get('cost', None),
+            'fitness': d.get('fitness', None)
+        }
+        # Moves zählen
+        align_pairs = d.get('alignment', [])
+        sync = 0
+        move_log = 0
+        move_model = 0
+        for a, b in align_pairs:
+            if a != '>>' and b != '>>':
+                sync += 1
+            elif a != '>>' and b == '>>':
+                move_log += 1
+            elif a == '>>' and b != '>>':
+                move_model += 1
+        row['sync_moves'] = sync
+        row['move_on_log'] = move_log
+        row['move_on_model'] = move_model
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+def plot_alignment_cost_hist(df_stats: pd.DataFrame, bins: int = 20):
+    plt.figure()
+    plt.hist(df_stats['cost'].dropna(), bins=bins)
+    plt.xlabel('Alignment-Kosten')
+    plt.ylabel('Anzahl')
+    plt.title('Histogramm: Alignment-Kosten')
+    plt.show()
+
+def plot_move_type_bars(df_stats: pd.DataFrame):
+    agg = df_stats[['sync_moves', 'move_on_log', 'move_on_model']].sum()
+    labels = list(agg.index)
+    values = list(agg.values)
+    plt.figure()
+    plt.bar(range(len(values)), values)
+    plt.xticks(range(len(labels)), labels, rotation=0)
+    plt.ylabel('Gesamtanzahl Moves (über alle Traces)')
+    plt.title('Move-Typen (aggregiert)')
+    plt.show()
+
+df_stats_sepsis = extract_alignment_stats(aligned_traces_ind_sepsis)
+plot_alignment_cost_hist(df_stats_sepsis)
+plot_move_type_bars(df_stats_sepsis)
+
+# df_stats_iacs = extract_alignment_stats(aligned_traces_ind_iacs)
+# plot_alignment_cost_hist(df_stats_iacs)
+# plot_move_type_bars(df_stats_iacs)
+
+
+
+
+
+
+
+
+
+
+
+# Fitness zwischen Log und Modell berechnen (TBR und Alignments)
+def get_replay_fitness_tbr(log, net, initial_marking, final_marking):
+    rp_fitness_tbr = pm4py.fitness_token_based_replay(log, net, initial_marking, final_marking)
+    print(f'Ergebnisse für die Fitness mit Token-Based Replay: {rp_fitness_tbr}')
+
+
+def get_replay_fitness_align(log, net, initial_marking, final_marking):
+    rp_fitness_align = pm4py.fitness_alignments(log, net, initial_marking, final_marking)
+    print(f'Ergebnisse für die Fitness mit Alignments: {rp_fitness_align}')
+
+
+get_replay_fitness_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_replay_fitness_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+
+# get_replay_fitness_tbr(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
+# get_replay_fitness_align(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
+
+# Precision zwischen Log und Modell berechnen (ETConformance (TBR) und Align-ETConformance(Alignments))
+def get_precision_tbr(log, net, initial_marking, final_marking):
+    precision_tbr = pm4py.precision_token_based_replay(log, net, initial_marking, final_marking)
+    print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}')
+
+
+def get_precision_align(log, net, initial_marking, final_marking):
+    precision_align = pm4py.precision_alignments(log, net, initial_marking, final_marking)
+    print(f'Die Precision mit Alignments beträgt: {precision_align}')
+
+
+get_precision_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_precision_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+
+# get_precision_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+# get_precision_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+
+
+
+
+'''# Generalization und Simplicity zwischen Log und Modell berechnen
+from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
+
+def get_generalization(log, net, initial_marking, final_marking):
+    generalization = generalization_evaluator.apply(log, net, initial_marking, final_marking)
+    print(f'Die Generalization beträgt: {generalization}')
+
+
+from pm4py.algo.evaluation.simplicity import algorithm as simplicity_evaluator
+
+def get_simplicity(log, net, initial_marking, final_marking):
+    simplicity = simplicity_evaluator.apply(net)
+    print(f'Die Simplicity beträgt: {simplicity}')
+
+
+get_generalization(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_simplicity(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+
+# get_generalization(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+# get_simplicity(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)'''
+
+
 
 
 
