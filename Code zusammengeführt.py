@@ -13,8 +13,11 @@ def import_xes(path_to_xes: str):
 
 # Import des Datensatzes
 log_sepsis = import_xes('sepsis_case.xes')
+log_sepsis.to_csv('log_sepsis.csv', index=False)
 
-# log_iacs = import_xes('D:/Users/domin/Desktop/Projekt PM&Py/Datensätze/IACS/BPI Challenge 2018.xes')
+#log_iacs = import_xes('log_iacs.xes')
+#log_iacs.to_csv('log_sepsis.csv', index=False)
+
 
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
@@ -63,36 +66,19 @@ dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
 # dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 
-
-
-
-
 # Filteralgorithmus
 def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit = None, delete_activities = None, check_value_activities=None):
     selected_activities = set()
     selected_end_acts = set()
 
-    for activity, count in start_acts.items():
-        if count / no_of_cases >= min_ratio:
-            selected_activities.add(activity)
+    for activity, count in start_acts.items(): #Iteration im Dict über den Namen der Startaktivität und ihre Häufigkeit.
+        if count / no_of_cases >= min_ratio: #Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamtfällen werden berücksichtigt.
+            selected_activities.add(activity) #Sammeln der Aktivitäten in einer Liste
     
     if end_crit is not None:
-        selected_end_acts = set(end_acts.keys()) - set(end_crit)
+        selected_end_acts = set(end_acts.keys()) - set(end_crit) #Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
-        drop_mask = pd.Series(False, index=log.index)
     
-    for item in check_value_activities:
-
-        is_activity = log["concept:name"] == item
-        is_empty = log[item].isna()
-        condition = is_activity & is_empty
-        drop_mask = drop_mask | condition
-
-    problematic_groups = log.loc[drop_mask, "org:group"].value_counts()
-    print("Häufigkeit der Gruppen in fehlerhaften Zeilen:")
-    print(problematic_groups)
-    
-    log.drop(index=log[drop_mask].index, inplace=True)
 
     filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False)
     filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities)
@@ -100,13 +86,13 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
 
     return filtered_log
 
-
-criteria_end_sepsis = ['IV Antibiotics', 'ER Sepsis Triage', 'Leucocytes', 'IV Liquid', 'CRP', 'LacticAcid', 'Admission NC', 'ER Triage']
-deleted_activities_sepsis = ['Return ER']
-activity_check = ["Leucocytes", "LacticAcid", "CRP"]
+#Filterkriterien definieren
+criteria_end_sepsis = ['IV Antibiotics', 'ER Sepsis Triage', 'Leucocytes', 'IV Liquid', 'CRP', 'LacticAcid', 'Admission NC', 'ER Triage'] #Endaktivitäten, die herausgefiltert werden sollen
+deleted_activities_sepsis = ['Return ER'] #Aktivitäten die generell gelöscht werden sollen im Log
+activity_check_sepsis = ["Leucocytes", "LacticAcid", "CRP"] #Aktivitäten die auf ihre Vollständigkeit im Log überprüft werden sollen
 
 filtered_log_sepsis = filter_log(start_act_sepsis, end_act_sepsis, log_sepsis, cases_no_sepsis, end_crit = criteria_end_sepsis, 
-                                 delete_activities = deleted_activities_sepsis, check_value_activities=activity_check)
+                                 delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis) #Übergabe der Parameter an die Filter-Methode
 print(filtered_log_sepsis) # Vielleicht lieber nur Head/Tail etc.? (vor allem bei IACS-Datensatz)
 
 filtered_log_sepsis.to_csv('filtered_log.csv', index=False)
