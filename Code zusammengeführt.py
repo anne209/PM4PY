@@ -112,8 +112,8 @@ filtered_log_sepsis.to_csv('filtered_log.csv', index=False)
 # sum_up_log(filtered_log_sepsis)
 # get_cases_events(filtered_log_sepsis)
 
-'''criteria_end_sepsis = ['PLATZHALTER']
-deleted_activities_sepsis = ["PLATZHALTER"]
+'''criteria_end_iacs = ['PLATZHALTER']
+deleted_activities_iacs = ["PLATZHALTER"]
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit = criteria_end_iacs, delete_activities = deleted_activities_iacs)
 print(filtered_log_iacs)'''
@@ -558,4 +558,5 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
 # cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # Var. von vorher nicht definiert
+
 
