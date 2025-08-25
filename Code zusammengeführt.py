@@ -76,13 +76,14 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     if end_crit is not None:
         selected_end_acts = set(end_acts.keys()) - set(end_crit) #Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
-        drop_mask = pd.Series(False, index=log.index)
+    drop_mask = pd.Series(False, index=log.index)
     
     for item in check_value_activities:
 
         is_activity = log["concept:name"] == item
         is_empty = log[item].isna()
         condition = is_activity & is_empty
+    
         drop_mask = drop_mask | condition
 
     problematic_groups = log.loc[drop_mask, "org:group"].value_counts()
