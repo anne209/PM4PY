@@ -256,9 +256,8 @@ column_filter_sepsis = ["lifecycle:transition"] #alle complete
 filtered_log_sepsis = filter_log(start_act_sepsis, end_act_sepsis, log_sepsis, cases_no_sepsis, end_crit = criteria_end_sepsis, 
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
                                  col_filter=column_filter_sepsis) #Übergabe der Parameter an die Filter-Methode
-print(filtered_log_sepsis) # Vielleicht lieber nur Head/Tail etc.? (vor allem bei IACS-Datensatz)
-
-filtered_log_sepsis.to_csv('filtered_log.csv', index=False)
+sum_up_log(filtered_log_sepsis)
+get_cases_events(filtered_log_sepsis)
 
 
 column_filter_iacs = ["lifecycle:transition", "case:program-id", "case:penalty_BGKV", "case:penalty_BGP", "case:penalty_AVUVP", 
@@ -273,8 +272,8 @@ get_cases_events(filtered_log_sepsis)
 deleted_activities_iacs = ["PLATZHALTER"]
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit = criteria_end_iacs, delete_activities = deleted_activities_iacs)
-sum_up_log(filtered_log_sepsis)
-get_cases_events(filtered_log_sepsis)'''
+sum_up_log(filtered_log_iacs)
+get_cases_events(filtered_log_iacs)'''
 
 
 
