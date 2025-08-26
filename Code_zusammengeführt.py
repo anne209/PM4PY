@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 from typing import List, Dict
 import xml.etree.ElementTree as ET
+from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
 
 
 
@@ -145,8 +146,6 @@ remove_keys = {"lifecycle:transition", "case:program-id", "case:penalty_BGKV", "
                       "case:greening", "case:basic payment", "case:penalty_B5F", "case:penalty_JLP7", 
                       "case:penalty_JLP5"}
 clean_xes("log_iacs.xes", "flog_iacs.xes", remove_keys)
-
-from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
 
 
 # Funktion zum Import von .xes-Dateien
