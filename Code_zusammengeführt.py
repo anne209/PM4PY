@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
-
+from pm4py.util import constants
+from pm4py.statistics.traces.generic.log import case_statistics
+from pm4py.visualization.graphs import visualizer as graphs_visualizer
 
 
 HEADER = b'''<?xml version="1.0" encoding="UTF-8" ?>
@@ -349,6 +351,16 @@ create_dfg_from_log(filtered_log_var_sepsis)
 # run_alpha_miner(filtered_log_var_iacs)
 # create_dfg_from_log(filtered_log_var_iacs)
 
+# Erstellen eines semi-logarithmischen Diagrammes der Verteilung der Case-Dauern
+def plot_case_durations(log):
+    x, y = case_statistics.get_kde_caseduration(log, parameters={constants.PARAMETER_CONSTANT_TIMESTAMP_KEY: "time:timestamp"})
+    plot = graphs_visualizer.apply_semilogx(x, y, variant=graphs_visualizer.Variants.CASES)
+    graphs_visualizer.view(plot)
+
+
+plot_case_durations(filtered_log_sepsis)
+
+# plot_case_durations(filtered_log_iacs)
 
 # Temporal Profile erstellen
 
@@ -367,9 +379,6 @@ get_temporal_profile(filtered_log_sepsis)
 
 
 # Helfer TBR
-'''from typing import List, Dict
-import pandas as pd'''
-
 def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variablen)namen für TBR ändern
     rows = []
     for i, d in enumerate(replayed_traces):
