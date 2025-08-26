@@ -76,26 +76,26 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     if end_crit is not None:
         selected_end_acts = set(end_acts.keys()) - set(end_crit) #Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
-    drop_mask = pd.Series(False, index=log.index)
+    drop_mask = pd.Series(False, index=log.index) #Erstellen einer Maske mit Boolean-Werte
     
-    for item in check_value_activities:
+    for item in check_value_activities: #Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
-        is_activity = log["concept:name"] == item
-        is_empty = log[item].isna()
-        condition = is_activity & is_empty
+        is_activity = log["concept:name"] == item #True, wenn die Aktivität ausgeführt wrude
+        is_empty = log[item].isna() #True, wenn kein Laborwert eingetragen wurde
+        condition = is_activity & is_empty # True, nur wenn beide True sind
     
-        drop_mask = drop_mask | condition
+        drop_mask = drop_mask | condition #Boolean-Werte werden der drop_mask hinzugefügt
 
-    problematic_groups = log.loc[drop_mask, "org:group"].value_counts()
+    problematic_groups = log.loc[drop_mask, "org:group"].value_counts() #Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
     print("Häufigkeit der Gruppen in fehlerhaften Zeilen:")
     print(problematic_groups)
     
-    log.drop(index=log[drop_mask].index, inplace=True)
+    log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
     
 
-    filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False)
-    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities)
-    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)
+    filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
+    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) #Filtern nach Startaktivitäten
+    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)#Filtern nach Endaktivitäten
 
     return filtered_log
 
