@@ -146,16 +146,20 @@ remove_keys = {"lifecycle:transition", "case:program-id", "case:penalty_BGKV", "
                       "case:penalty_JLP5"}
 clean_xes("log_iacs.xes", "flog_iacs.xes", remove_keys)
 
+from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+
+
 # Funktion zum Import von .xes-Dateien
 def import_xes(path_to_xes: str):
     log = pm4py.read_xes(path_to_xes)
     return log
 
 # Import des Datensatzes
-#log_sepsis = import_xes('sepsis_case.xes')
-#log_sepsis.to_csv('log_sepsis.csv', index=False)
-log_iacs = import_xes('flog_iacs.xes')
-log_iacs.to_csv('flog_iacs.csv', index=False)
+log_sepsis = import_xes('sepsis_case.xes')
+log_sepsis.to_csv('log_sepsis.csv', index=False)
+
+log_iacs = import_xes('log_iacs.xes')
+log_iacs.to_csv('log_iacs.csv', index=False)
 
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
@@ -166,7 +170,7 @@ def sum_up_log (log):
     
 sum_up_log(log_sepsis)
 
-# sum_up_log(log_iacs)
+sum_up_log(log_iacs)
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
@@ -178,7 +182,7 @@ def get_cases_events(log):
 
 cases_no_sepsis = get_cases_events(log_sepsis)
 
-# cases_no_iacs = get_cases_events(log_iacs)
+cases_no_iacs = get_cases_events(log_iacs)
 
 # Start- und Endaktivitäten anzeigen
 def get_start_end_act(log):
@@ -190,7 +194,7 @@ def get_start_end_act(log):
 
 start_act_sepsis, end_act_sepsis = get_start_end_act(log_sepsis)
 
-# start_act_iacs, end_act_iacs = get_start_end_act(log_iacs)
+start_act_iacs, end_act_iacs = get_start_end_act(log_iacs)
 
 # DFG aus ungefiltertem Log erstellen
 def create_dfg_from_log(log_input):
@@ -201,7 +205,7 @@ def create_dfg_from_log(log_input):
 
 dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
 
-# dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
+dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 
 # Filteralgorithmus
@@ -261,14 +265,15 @@ column_filter_iacs = ["lifecycle:transition", "case:program-id", "case:penalty_B
                       "case:penalty_JLP5"] #complete, 215, False, False, False, True, True, False, False, False
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, col_filter=column_filter_iacs)
-# sum_up_log(filtered_log_sepsis)
-# get_cases_events(filtered_log_sepsis)
+sum_up_log(filtered_log_sepsis)
+get_cases_events(filtered_log_sepsis)
 
 '''criteria_end_iacs = ['PLATZHALTER']
 deleted_activities_iacs = ["PLATZHALTER"]
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit = criteria_end_iacs, delete_activities = deleted_activities_iacs)
-print(filtered_log_iacs)'''
+sum_up_log(filtered_log_sepsis)
+get_cases_events(filtered_log_sepsis)'''
 
 
 
@@ -342,6 +347,16 @@ filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
 
 
+# Temporal Profile erstellen
+
+def get_temporal_profile(log):
+    temporal_profile = temporal_profile_discovery.apply(log)
+    print(temporal_profile)
+
+
+get_temporal_profile(filtered_log_sepsis)
+
+# get_temporal_profile(filtered_log_iacs)
 
 
 
