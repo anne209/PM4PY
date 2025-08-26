@@ -193,15 +193,19 @@ show_filter_variants(filtered_log_sepsis)
 
 # show_filter_vars(filtered_log_iacs)
 
-# Filtern nach Varianten
+# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
 def filter_by_variants(log, k):
     filtered_log_var = pm4py.filter_variants_top_k(log, k)
     return filtered_log_var
 
 
 filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
+run_alpha_miner(filtered_log_var_sepsis)
+create_dfg_from_log(filtered_log_var_sepsis)
 
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
+# run_alpha_miner(filtered_log_var_iacs)
+# create_dfg_from_log(filtered_log_var_iacs)
 
 
 # Temporal Profile erstellen
