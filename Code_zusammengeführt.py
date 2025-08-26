@@ -6,6 +6,9 @@ import os
 import matplotlib.pyplot as plt
 from typing import List, Dict
 
+from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+
+
 # Funktion zum Import von .xes-Dateien
 def import_xes(path_to_xes: str):
     log = pm4py.read_xes(path_to_xes)
