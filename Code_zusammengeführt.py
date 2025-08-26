@@ -201,6 +201,16 @@ filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
 
 
+# Temporal Profile erstellen
+
+def get_temporal_profile(log):
+    temporal_profile = temporal_profile_discovery.apply(log)
+    print(temporal_profile)
+
+
+get_temporal_profile(filtered_log_sepsis)
+
+# get_temporal_profile(filtered_log_iacs)
 
 
 
