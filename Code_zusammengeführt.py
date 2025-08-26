@@ -118,14 +118,15 @@ column_filter_iacs = ["lifecycle:transition", "case:program-id", "case:penalty_B
                       "case:penalty_JLP5", ] #complete, 215, False, False, False, True, True, False, False, False, False
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, col_filter=column_filter_iacs)
-# sum_up_log(filtered_log_sepsis)
-# get_cases_events(filtered_log_sepsis)
+sum_up_log(filtered_log_sepsis)
+get_cases_events(filtered_log_sepsis)
 
 '''criteria_end_iacs = ['PLATZHALTER']
 deleted_activities_iacs = ["PLATZHALTER"]
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit = criteria_end_iacs, delete_activities = deleted_activities_iacs)
-print(filtered_log_iacs)'''
+sum_up_log(filtered_log_sepsis)
+get_cases_events(filtered_log_sepsis)'''
 
 
 
