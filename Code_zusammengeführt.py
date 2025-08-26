@@ -14,8 +14,9 @@ def import_xes(path_to_xes: str):
 # Import des Datensatzes
 log_sepsis = import_xes('sepsis_case.xes')
 log_sepsis.to_csv('log_sepsis.csv', index=False)
-#log_iacs = import_xes('log_iacs.xes')
-#log_iacs.to_csv('log_iacs.csv', index=False)
+
+log_iacs = import_xes('log_iacs.xes')
+log_iacs.to_csv('log_iacs.csv', index=False)
 
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
@@ -26,7 +27,7 @@ def sum_up_log (log):
     
 sum_up_log(log_sepsis)
 
-# sum_up_log(log_iacs)
+sum_up_log(log_iacs)
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
@@ -38,7 +39,7 @@ def get_cases_events(log):
 
 cases_no_sepsis = get_cases_events(log_sepsis)
 
-# cases_no_iacs = get_cases_events(log_iacs)
+cases_no_iacs = get_cases_events(log_iacs)
 
 # Start- und Endaktivitäten anzeigen
 def get_start_end_act(log):
@@ -50,7 +51,7 @@ def get_start_end_act(log):
 
 start_act_sepsis, end_act_sepsis = get_start_end_act(log_sepsis)
 
-# start_act_iacs, end_act_iacs = get_start_end_act(log_iacs)
+start_act_iacs, end_act_iacs = get_start_end_act(log_iacs)
 
 # DFG aus ungefiltertem Log erstellen
 def create_dfg_from_log(log_input):
@@ -61,7 +62,7 @@ def create_dfg_from_log(log_input):
 
 dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
 
-# dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
+dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 
 # Filteralgorithmus
