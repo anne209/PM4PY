@@ -5,8 +5,147 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from typing import List, Dict
-
+import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+
+
+
+HEADER = b'''<?xml version="1.0" encoding="UTF-8" ?>
+<!-- This file has been generated with the OpenXES library. It conforms -->
+<!-- to the XML serialization of the XES standard for log storage and -->
+<!-- management. -->
+<!-- XES standard version: 1.0 -->
+<!-- OpenXES library version: 1.0RC7 -->
+<!-- OpenXES is available from http://www.openxes.org/ -->
+<log xes.version="1.0" xes.features="nested-attributes" openxes.version="1.0RC7">
+	<extension name="Organizational" prefix="org" uri="http://www.xes-standard.org/org.xesext"/>
+	<extension name="MetaData_Time" prefix="meta_time" uri="http://www.xes-standard.org/meta_time.xesext"/>
+	<extension name="Time" prefix="time" uri="http://www.xes-standard.org/time.xesext"/>
+	<extension name="MetaData_3TU" prefix="meta_3TU" uri="http://www.xes-standard.org/meta_3TU.xesext"/>
+	<extension name="Lifecycle" prefix="lifecycle" uri="http://www.xes-standard.org/lifecycle.xesext"/>
+	<extension name="Concept" prefix="concept" uri="http://www.xes-standard.org/concept.xesext"/>
+	<global scope="trace">
+		<boolean key="penalty_JLP1" value="false"/>
+		<int key="number_parcels" value="0"/>
+		<boolean key="penalty_JLP3" value="false"/>
+		<boolean key="penalty_JLP2" value="false"/>
+		<boolean key="penalty_JLP5" value="false"/>
+		<string key="year" value="none"/>
+		<boolean key="penalty_JLP7" value="false"/>
+		<boolean key="penalty_JLP6" value="false"/>
+		<boolean key="redistribution" value="false"/>
+		<float key="amount_applied0" value="0.0"/>
+		<id key="identity:id" value="AAE527A9-1929-49A2-AB4A-147CD5D2ADD5"/>
+		<float key="payment_actual0" value="0.0"/>
+		<boolean key="penalty_V5" value="false"/>
+		<string key="concept:name" value="none"/>
+		<boolean key="penalty_B5F" value="false"/>
+		<boolean key="basic payment" value="false"/>
+		<boolean key="penalty_GP1" value="false"/>
+		<boolean key="penalty_B16" value="false"/>
+		<boolean key="penalty_AGP" value="false"/>
+		<boolean key="selected_manually" value="false"/>
+		<float key="area" value="0.0"/>
+		<boolean key="penalty_B3" value="false"/>
+		<boolean key="selected_risk" value="false"/>
+		<boolean key="penalty_B2" value="false"/>
+		<boolean key="penalty_AVBP" value="false"/>
+		<boolean key="penalty_B5" value="false"/>
+		<boolean key="penalty_B4" value="false"/>
+		<boolean key="penalty_B6" value="false"/>
+		<boolean key="penalty_ABP" value="false"/>
+		<boolean key="penalty_AVGP" value="false"/>
+		<boolean key="penalty_C4" value="false"/>
+		<boolean key="greening" value="false"/>
+		<boolean key="rejected" value="false"/>
+		<float key="cross_compliance" value="0.0"/>
+		<boolean key="penalty_C9" value="false"/>
+		<boolean key="penalty_AVJLP" value="false"/>
+		<boolean key="penalty_CC" value="false"/>
+		<boolean key="penalty_AVUVP" value="false"/>
+		<boolean key="penalty_BGK" value="false"/>
+		<boolean key="penalty_C16" value="false"/>
+		<string key="department" value="none"/>
+		<boolean key="penalty_BGP" value="false"/>
+		<boolean key="small farmer" value="false"/>
+		<float key="risk_factor" value="0.0"/>
+		<string key="applicant" value="none"/>
+		<boolean key="penalty_AUVP" value="false"/>
+		<boolean key="penalty_BGKV" value="false"/>
+		<string key="program-id" value="none"/>
+		<float key="penalty_amount0" value="0.0"/>
+		<string key="application" value="none"/>
+		<boolean key="penalty_AJLP" value="false"/>
+		<boolean key="selected_random" value="false"/>
+		<boolean key="young farmer" value="false"/>
+	</global>
+	<global scope="event">
+		<string key="eventid" value="none"/>
+		<string key="note" value="none"/>
+		<string key="activity" value="none"/>
+		<string key="docid" value="none"/>
+		<string key="subprocess" value="none"/>
+		<date key="time:timestamp" value="1970-01-01T01:00:00.000+01:00"/>
+		<id key="identity:id" value="9C25102D-21F3-4361-84C7-DA8BBF6953BC"/>
+		<string key="doctype" value="none"/>
+		<id key="docid_uuid" value="5302F7BA-6EA6-4E69-880B-C9C203EB86C9"/>
+		<string key="org:resource" value="none"/>
+		<string key="concept:name" value="none"/>
+		<boolean key="success" value="false"/>
+		<string key="lifecycle:transition" value="none"/>
+	</global>
+	<classifier name="Event Name" keys="concept:name"/>
+	<classifier name="Original Activity" keys="doctype subprocess activity"/>
+	<string key="meta_3TU:language" value="eng"/>
+	<float key="meta_time:duration_average" value="2.8977602621E7"/>
+	<date key="meta_3TU:creation_time" value="2018-02-07T11:49:52.625+01:00"/>
+	<float key="meta_time:log_duration" value="1.17208982E8"/>
+	<string key="meta_3TU:source_institute_type" value="Document management company"/>
+	<string key="meta_3TU:rights" value="Public"/>
+	<string key="meta_3TU:creation_place" value="Germany"/>
+	<float key="meta_time:duration_max" value="8.7385045817E7"/>
+	<string key="meta_3TU:source_program" value="profil c/s"/>
+	<id key="identity:id" value="86E187BA-C776-4459-B446-9C61FA2AF98C"/>
+	<string key="meta_3TU:creation_person" value="B.F. van Dongen &amp; Florian Borchert"/>
+	<float key="meta_time:duration_standard_deviation" value="1.3734464217E7"/>
+	<string key="meta_3TU:description" value="The European Union spends a large fraction of its budget on the Common Agricultural Policy (CAP). Among these spendings are direct payments, which are mainly aimed to provide a basic income for farmers decoupled from production. The rest of the CAP budget is spent for market related expenditures and rural development. The processes that govern the distribution of these funds are subject to complex regulations captured in EU and national law. The member states are required to operate an Integrated Administration and Control System (IACS), which includes IT systems to support the complex processes of subsidy distribution. The process considered in this dataset covers the handling of applications for EU direct payments for German farmers from the European Agricultural Guarantee Fund. The process repeats every year with minor changes due to changes in EU regulations. The dataset is extracted from the systems of data experts, Germany. Their tool profil c/s supports these processes at the level of federal ministries of agriculture and local departments. The workflows in profil c/s can be understood in terms of documents, where each document has a state that allows for certain actions. These actions can be executed manually at any point in time through document specific tools or they can be scheduled automatically. The latter may be either explicitly stated in the log or implicitly apparent if a large number of actions is performed by the same user at around the same time (batch processing). In total, the event log contains 2,514,266 events for 43,809 applications over a period of three years. The shortest case contains 24 events, the longest 2973 and on average there are 57 events per case referring to 14 activities."/>
+	<string key="meta_3TU:creation_institute" value="Eindhoven University of Technology"/>
+	<string key="concept:name" value="BPI Challenge 2018"/>
+	<date key="meta_time:log_start_time" value="2014-05-04T00:00:00.000+02:00"/>
+	<float key="meta_time:duration_total" value="1.269479793225363E12"/>
+	<string key="meta_3TU:source_institute" value="Eindhoven University of Technology &amp; data experts, Neubrandenburg, Germany"/>
+	<string key="meta_3TU:process_type" value="Implicitly structured"/>
+	<float key="meta_time:duration_min" value="9828893.063"/>
+	<string key="meta_3TU:log_type" value="Real-life"/>
+	<date key="meta_time:log_end_time" value="2018-01-19T13:03:02.000+01:00"/>
+	<string key="meta_3TU:source_model" value="EU Common Agricultural Policy"/>
+	<string key="meta_3TU:doi" value="doi:10.4121/uuid:3301445f-95e8-4ff0-98a4-901f1f204972"/>'''
+
+
+def clean_xes(input_file, output_file, remove_keys):
+    with open(output_file, 'wb') as out:
+        out.write(HEADER)
+        
+        context = ET.iterparse(input_file, events=("end",))
+        for event, elem in context:
+            if elem.tag in ("trace", "event"):
+                for child in list(elem):
+                    if child.tag in ("string", "date", "int", "float", "boolean", "id"):
+                        key = child.attrib.get("key")
+                        if key in remove_keys:
+                            elem.remove(child)
+
+                out.write(ET.tostring(elem, encoding="utf-8"))
+                elem.clear()
+
+        # Am Ende die Log-Tag schließen
+        out.write(b"</log>")
+
+
+remove_keys = {"lifecycle:transition", "case:program-id", "case:penalty_BGKV", "case:penalty_BGP", "case:penalty_AVUVP", 
+                      "case:greening", "case:basic payment", "case:penalty_B5F", "case:penalty_JLP7", 
+                      "case:penalty_JLP5"}
+clean_xes("log_iacs.xes", "flog_iacs.xes", remove_keys)
 
 
 # Funktion zum Import von .xes-Dateien
@@ -82,19 +221,22 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     
     drop_mask = pd.Series(False, index=log.index) #Erstellen einer Maske mit Boolean-Werte
     
-    for item in check_value_activities: #Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
-
-        is_activity = log["concept:name"] == item #True, wenn die Aktivität ausgeführt wrude
-        is_empty = log[item].isna() #True, wenn kein Laborwert eingetragen wurde
-        condition = is_activity & is_empty # True, nur wenn beide True sind
     
-        drop_mask = drop_mask | condition #Boolean-Werte werden der drop_mask hinzugefügt
+    if check_value_activities is not None:
+        for item in check_value_activities: #Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
-    problematic_groups = log.loc[drop_mask, "org:group"].value_counts() #Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
-    print("Häufigkeit der Gruppen in fehlerhaften Zeilen:")
-    print(problematic_groups)
+            is_activity = log["concept:name"] == item #True, wenn die Aktivität ausgeführt wrude
+            is_empty = log[item].isna() #True, wenn kein Laborwert eingetragen wurde
+            condition = is_activity & is_empty # True, nur wenn beide True sind
     
-    log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
+            drop_mask = drop_mask | condition #Boolean-Werte werden der drop_mask hinzugefügt
+
+        problematic_groups = log.loc[drop_mask, "org:group"].value_counts() #Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
+        print("Häufigkeit der Gruppen in fehlerhaften Zeilen:")
+        print(problematic_groups)
+    
+        log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
+
     log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
 
     filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
@@ -118,8 +260,8 @@ filtered_log_sepsis.to_csv('filtered_log.csv', index=False)
 
 
 column_filter_iacs = ["lifecycle:transition", "case:program-id", "case:penalty_BGKV", "case:penalty_BGP", "case:penalty_AVUVP", 
-                      "case:greening", "case:basic payment", "case:penalty_B5F", "case:penalty_B5F", "case:penalty_JLP7", 
-                      "case:penalty_JLP5", ] #complete, 215, False, False, False, True, True, False, False, False, False
+                      "case:greening", "case:basic payment", "case:penalty_B5F", "case:penalty_JLP7", 
+                      "case:penalty_JLP5"] #complete, 215, False, False, False, True, True, False, False, False
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, col_filter=column_filter_iacs)
 sum_up_log(filtered_log_sepsis)
