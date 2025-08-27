@@ -350,17 +350,6 @@ create_dfg_from_log(filtered_log_var_sepsis)
 # run_alpha_miner(filtered_log_var_iacs)
 # create_dfg_from_log(filtered_log_var_iacs)
 
-# Erstellen eines semi-logarithmischen Diagrammes der Verteilung der Case-Dauern
-def plot_case_durations(log):
-    x, y = case_statistics.get_kde_caseduration(log, parameters={constants.PARAMETER_CONSTANT_TIMESTAMP_KEY: "time:timestamp"})
-    plot = graphs_visualizer.apply_semilogx(x, y, variant=graphs_visualizer.Variants.CASES)
-    graphs_visualizer.view(plot)
-
-
-plot_case_durations(filtered_log_sepsis)
-
-# plot_case_durations(filtered_log_iacs)
-
 # Temporal Profile erstellen
 
 def get_temporal_profile(log):
