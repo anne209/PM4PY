@@ -159,7 +159,7 @@ def import_xes(path_to_xes: str):
 log_sepsis = import_xes('sepsis_case.xes')
 log_sepsis.to_csv('log_sepsis.csv', index=False)
 
-log_iacs = import_xes('log_iacs.xes')
+log_iacs = import_xes('log_iacs.xes') # Datei aktuell nicht hochgeladen
 log_iacs.to_csv('log_iacs.csv', index=False)
 
 
@@ -280,7 +280,7 @@ get_cases_events(filtered_log_iacs)'''
 # DFG aus gefiltertem Log erstellen
 dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
 
-# dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
+dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
 
 
 
