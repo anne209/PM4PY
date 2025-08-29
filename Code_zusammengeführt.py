@@ -660,43 +660,41 @@ plot_events_per_day(filtered_log_sepsis)
 
 
 
-# Spalte umbenennen für Social Network Analysis
-'''log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
-
-# log_iacs_sna = filtered_log_iacs.rename(columns = {'ALTER SPALTENNAME' : 'org:resource'})'''
+# Spalte bei Sepsis-Datensatz umbenennen für Social Network Analysis
+log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
 
 # Übergabe von Arbeit ermitteln und anzeigen
-'''def get_handover_of_work(log):
+def get_handover_of_work(log):
     handover_values = pm4py.discover_handover_of_work_network(log)
     pm4py.view_sna(handover_values)
 
 
 get_handover_of_work(log_sepsis_sna)
 
-# get_handover_of_work(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# get_handover_of_work(log_iacs_sna)
 
 # Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
-'''def get_subcontracting(log):
+def get_subcontracting(log):
     subcont_values = pm4py.discover_subcontracting_network(log)
     pm4py.view_sna(subcont_values)
 
 
 get_subcontracting(log_sepsis_sna)
 
-# get_subcontracting(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# get_subcontracting(log_iacs_sna)
 
 # Ermitteln und Anzeigen, wie oft zusammengearbeitet wird
-'''def get_working_together(log):
+def get_working_together(log):
     work_together_values = pm4py.discover_working_together_network(log)
     pm4py.view_sna(work_together_values)
 
 
 get_working_together(log_sepsis_sna)
 
-# get_working_together(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# get_working_together(log_iacs_sna)
 
 # Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
-'''def get_similar_activities(log):
+def get_similar_activities(log):
     similar_act = pm4py.discover_activity_based_resource_similarity(log) # Benennung Var. wg Cluster-A.
     pm4py.view_sna(similar_act)
     return similar_act
@@ -704,17 +702,17 @@ get_working_together(log_sepsis_sna)
 
 similar_activities_sepsis = get_similar_activities(log_sepsis_sna)
 
-# similar_activities_iacs = get_similar_activities(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# similar_activities_iacs = get_similar_activities(log_iacs_sna)
 
 # Orginisationale Rollen entdecken und ausgeben
-'''def get_orga_roles(log):
+def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
     print([x[0] for x in roles])
 
 
 get_orga_roles(log_sepsis_sna)
 
-# get_orga_roles(log_iacs_sna)''' # KeyError: org:resource
+# get_orga_roles(log_iacs_sna)
 
 # Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
 '''from pm4py.algo.organizational_mining.sna import util # wahrscheinlich nicht gut
@@ -725,6 +723,6 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
-# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # Var. von vorher nicht definiert
+# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # sklearn fehlt wohl, Visualisierung?
 
 
