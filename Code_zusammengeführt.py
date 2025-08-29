@@ -286,7 +286,7 @@ dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
 
 
 
-# Filtern nach Startaktivitäten
+# Filtern nach Startaktivitäten, kann evtl. weg
 def filter_by_start_activities(log, starts_to_keep):
     filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
     return filtered_log_start
@@ -300,31 +300,32 @@ filtered_log_start_sepsis = filter_by_start_activities(filtered_log_sepsis, ['ER
 def run_alpha_miner(log):
     net, initial_marking, final_marking = pm4py.discover_petri_net_alpha(log)
     pm4py.view_petri_net(net, initial_marking, final_marking)
-    return net, initial_marking, final_marking # Ausgabe für Conformance Checking notwendig
+    return net, initial_marking, final_marking # Kann evtl. weg
 
-net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
+alpha_net_sepsis, initial_marking_alpha_sepsis, final_marking_alpha_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. weg
 
-# net_iacs, initial_marking_iacs, final_marking_iacs = run_alpha_miner(filtered_log_iacs)
+# alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
 
 # Heuristic Miner anwenden
-def run_heuristic_miner(log):
-    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.99)
+def run_heuristic_miner(log, dependency_threshold=0.99):
+    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold)
     pm4py.view_heuristics_net(heuristic_net)
 
 
-run_heuristic_miner(filtered_log_sepsis)
+run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.2)
 
-# run_heuristic_miner(filtered_log_iacs)
+# run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
 
 # Inductive Miner anwenden
-def run_inductive_miner(log):
-    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log)
+def run_inductive_miner(log, noise_threshold=0.0):
+    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log, noise_threshold)
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
     return inductive_net, initial_marking_inductive, final_marking_inductive
 
-ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
 
-# ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs)
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis, noise_threshold=0.1)
+
+# ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
 
 # Varianten auflisten
 def show_filter_variants(log):
@@ -343,11 +344,11 @@ def filter_by_variants(log, k):
 
 
 filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
-run_alpha_miner(filtered_log_var_sepsis)
+run_inductive_miner(filtered_log_var_sepsis)
 create_dfg_from_log(filtered_log_var_sepsis)
 
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
-# run_alpha_miner(filtered_log_var_iacs)
+# run_inductive_miner(filtered_log_var_iacs)
 # create_dfg_from_log(filtered_log_var_iacs)
 
 # Temporal Profile erstellen
@@ -390,16 +391,16 @@ def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variab
 
 
 # TBR mit Modell aus Alpha Miner
-def tbr_alpha(log, net, initial_marking, final_marking):
+def tbr_ind(log, net, initial_marking, final_marking):
     replayed_traces = pm4py.conformance_diagnostics_token_based_replay(log, net, initial_marking, final_marking)
     df_tbr = tbr_list_to_dataframe(replayed_traces)
     print(f'Head des Token Based Replay mit Alpha Miner: \n{df_tbr.head(10)}')
     return df_tbr
 
 
-df_tbr_sepsis = tbr_alpha(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+df_tbr_sepsis = tbr_ind(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# df_tbr_iacs = tbr_alpha(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
+# df_tbr_iacs = tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
 def plot_tbr_fitness_hist(df_tbr: pd.DataFrame, bins: int = 20):
@@ -515,16 +516,16 @@ def get_replay_fitness_align(log, net, initial_marking, final_marking):
     print(f'Ergebnisse für die Fitness mit Alignments: {rp_fitness_align}')
 
 
-get_replay_fitness_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-get_replay_fitness_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_replay_fitness_tbr(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
-# get_replay_fitness_align(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
+# get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Precision zwischen Log und Modell berechnen (ETConformance (TBR) und Align-ETConformance(Alignments))
 def get_precision_tbr(log, net, initial_marking, final_marking):
     precision_tbr = pm4py.precision_token_based_replay(log, net, initial_marking, final_marking)
-    print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}')
+    print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}') # evtl. nur bestimmten Wert ausgeben
 
 
 def get_precision_align(log, net, initial_marking, final_marking):
@@ -532,16 +533,16 @@ def get_precision_align(log, net, initial_marking, final_marking):
     print(f'Die Precision mit Alignments beträgt: {precision_align}')
 
 
-get_precision_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-get_precision_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_precision_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-# get_precision_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-
-
+# get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 
-'''# Generalization und Simplicity zwischen Log und Modell berechnen
+
+
+# Generalization und Simplicity zwischen Log und Modell berechnen
 from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
 
 def get_generalization(log, net, initial_marking, final_marking):
@@ -556,11 +557,11 @@ def get_simplicity(log, net, initial_marking, final_marking):
     print(f'Die Simplicity beträgt: {simplicity}')
 
 
-get_generalization(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-get_simplicity(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_generalization(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-# get_simplicity(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)'''
+# get_generalization(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# get_simplicity(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 
 
