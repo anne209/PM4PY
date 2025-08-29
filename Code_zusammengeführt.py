@@ -175,7 +175,7 @@ sum_up_log(log_iacs)
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
-    cases_no = len(log_sepsis['case:concept:name'].unique()) # case:... für iacs?
+    cases_no = len(log_sepsis['case:concept:name'].unique())
     events_no = len(log_sepsis)
     
     print(f'Anzahl Fälle: {cases_no}\nAnzahl Ereignisse: {events_no}')
@@ -191,7 +191,7 @@ def get_start_end_act(log):
     end_act = pm4py.get_end_activities(log)
     
     print(f'Startaktivitäten: {start_act}\nEndaktivitäten: {end_act}')
-    return start_act, end_act # Evtl. überflüssig
+    return start_act, end_act
 
 start_act_sepsis, end_act_sepsis = get_start_end_act(log_sepsis)
 
@@ -330,7 +330,7 @@ ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_induc
 # Varianten auflisten
 def show_filter_variants(log):
     variants = pm4py.get_variants(log)
-    print(f'Varianten: {variants}')
+    print(f'Varianten: {variants}') # Ausdruck zu lang
 
 
 show_filter_variants(filtered_log_sepsis)
@@ -355,7 +355,7 @@ create_dfg_from_log(filtered_log_var_sepsis)
 
 def get_temporal_profile(log):
     temporal_profile = temporal_profile_discovery.apply(log)
-    print(temporal_profile)
+    print(temporal_profile) # Ausdruck zu lang
 
 
 get_temporal_profile(filtered_log_sepsis)
@@ -434,7 +434,7 @@ plot_tbr_fit_flag(df_tbr_sepsis)
 # Alignments bestimmen mit Modell aus Inductive Miner
 def alignments_inductive(log, net, initial_marking, final_marking):
     aligned_traces_ind = pm4py.conformance_diagnostics_alignments(log, net, initial_marking, final_marking)
-    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}')
+    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}') # Ausdruck zu lang
     return aligned_traces_ind
 
 aligned_traces_ind_sepsis = alignments_inductive(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
