@@ -4,9 +4,15 @@ import pm4py
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import sklearn
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+from pm4py.algo.conformance.tokenreplay import algorithm as token_based_replay
+from pm4py.algo.conformance.tokenreplay.diagnostics import duration_diagnostics
+from pm4py.algo.conformance.tokenreplay.diagnostics import root_cause_analysis
+from pm4py.visualization.decisiontree import visualizer as dt_vis
 from pm4py.util import constants
 from pm4py.statistics.traces.generic.log import case_statistics
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
@@ -390,11 +396,11 @@ def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variab
     return pd.DataFrame(rows)
 
 
-# TBR mit Modell aus Alpha Miner
+# TBR mit Modell aus Inductive Miner
 def tbr_ind(log, net, initial_marking, final_marking):
     replayed_traces = pm4py.conformance_diagnostics_token_based_replay(log, net, initial_marking, final_marking)
     df_tbr = tbr_list_to_dataframe(replayed_traces)
-    print(f'Head des Token Based Replay mit Alpha Miner: \n{df_tbr.head(10)}')
+    print(f'Head des Token Based Replay mit Inductive Miner: \n{df_tbr.head(10)}')
     return df_tbr
 
 
@@ -430,6 +436,94 @@ plot_tbr_fit_flag(df_tbr_sepsis)
 
 # plot_tbr_fitness_hist(df_tbr_iacs)
 # plot_tbr_fit_flag(df_tbr_iacs)
+
+
+
+
+
+
+
+# Throughput Analysis: TBR mit angepassten Einstellungen
+def tbr_throughput(log, net, initial_marking, final_marking):
+    parameters_tbr = {
+        token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.DISABLE_VARIANTS: True,
+        token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.ENABLE_PLTR_FITNESS: True
+    }
+    replayed_traces, place_fitness, trans_fitness, unwanted_activities = token_based_replay.apply(
+        log, net, initial_marking, final_marking, parameters=parameters_tbr
+    )
+    return replayed_traces, place_fitness, trans_fitness, unwanted_activities
+
+
+log_diagnostics_sepsis = pm4py.convert_to_event_log(filtered_log_sepsis)
+replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_activities_sepsis = tbr_throughput(log_diagnostics_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# log_diagnostics_iacs = pm4py.convert_to_event_log(filtered_log_iacs)
+# replayed_traces_iacs, place_fitness_iacs, trans_fitness_iacs, unwanted_activities_iacs = tbr_throughput(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+def througput_trans(log, trans_fitness):
+    trans_diagnostics = duration_diagnostics.diagnose_from_trans_fitness(log, trans_fitness)
+    for trans in trans_diagnostics:
+        print(trans, trans_diagnostics[trans])
+
+
+througput_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
+
+# througput_trans(filtered_log_iacs, trans_fitness_iacs)
+
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+def throughput_act(log, unwanted_activities):
+    act_diagnostics = duration_diagnostics.diagnose_from_notexisting_activities(log, unwanted_activities)
+    for act in act_diagnostics:
+        print(act, act_diagnostics[act])
+
+
+throughput_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
+
+# throughput_act(filtered_log_iacs, unwanted_activities_iacs)
+
+# Vorbereitung Root Cause Analysis
+string_attributes = ['org:group']
+numeric_attributes = []
+parameters = {'string_attributes': string_attributes, 'numeric_attributes': numeric_attributes}
+
+# Root Cause Analysis der falsch ausgeführten Transitionen
+def rca_trans(log, trans_fitness):
+    trans_root_cause = root_cause_analysis.diagnose_from_trans_fitness(log, trans_fitness, parameters=parameters)
+    for trans in trans_root_cause:
+        clf = trans_root_cause[trans]['clf']
+        feature_names = trans_root_cause[trans]['feature_names']
+        classes = trans_root_cause[trans]['classes']
+        # Visualization can be called
+        gviz = dt_vis.apply(clf, feature_names, classes)
+        dt_vis.view(gviz)
+
+
+rca_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
+
+# rca_trans(filtered_log_iacs, trans_fitness_iacs)
+
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+def rca_act(log, unwanted_activities):
+    act_root_cause = root_cause_analysis.diagnose_from_notexisting_activities(log, unwanted_activities, parameters=parameters)
+    for act in act_root_cause:
+        clf = act_root_cause[act]["clf"]
+        feature_names = act_root_cause[act]["feature_names"]
+        classes = act_root_cause[act]["classes"]
+        # Visualization can be called
+        gviz = dt_vis.apply(clf, feature_names, classes)
+        dt_vis.view(gviz)
+
+
+rca_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
+
+# rca_act(filtered_log_iacs, unwanted_activities_iacs)
+
+
+
+
+
 
 # Alignments bestimmen mit Modell aus Inductive Miner
 def alignments_inductive(log, net, initial_marking, final_marking):
