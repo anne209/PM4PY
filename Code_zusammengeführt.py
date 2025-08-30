@@ -238,10 +238,10 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
         print(problematic_groups)
     
         log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
-
-    log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
-
-    filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
+    if col_filter is not None:
+            log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
+    if delete_activities is not None:
+            filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
     filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) #Filtern nach Startaktivitäten
     filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)#Filtern nach Endaktivitäten
 
