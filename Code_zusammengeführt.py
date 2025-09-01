@@ -4,9 +4,15 @@ import pm4py
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import sklearn
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+from pm4py.algo.conformance.tokenreplay import algorithm as token_based_replay
+from pm4py.algo.conformance.tokenreplay.diagnostics import duration_diagnostics
+from pm4py.algo.conformance.tokenreplay.diagnostics import root_cause_analysis
+from pm4py.visualization.decisiontree import visualizer as dt_vis
 from pm4py.util import constants
 from pm4py.statistics.traces.generic.log import case_statistics
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
@@ -175,7 +181,7 @@ log_iacs = import_xes('BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht ho
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
-    cases_no = len(log_sepsis['case:concept:name'].unique()) # case:... für iacs?
+    cases_no = len(log_sepsis['case:concept:name'].unique())
     events_no = len(log_sepsis)
     
     print(f'Anzahl Fälle: {cases_no}\nAnzahl Ereignisse: {events_no}')
@@ -191,7 +197,7 @@ def get_start_end_act(log):
     end_act = pm4py.get_end_activities(log)
     
     print(f'Startaktivitäten: {start_act}\nEndaktivitäten: {end_act}')
-    return start_act, end_act # Evtl. überflüssig
+    return start_act, end_act
 
 start_act_sepsis, end_act_sepsis = get_start_end_act(log_sepsis)
 
@@ -237,16 +243,13 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
         problematic_groups = log.loc[drop_mask, 'org:group'].value_counts() # Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
         print(f'Häufigkeit der Gruppen in fehlerhaften Zeilen: {problematic_groups}')
     
-        log.drop(index=log[drop_mask].index, inplace=True)# Alle Zeilen mit Boolean-Wert true werden herausgefiltert
+        log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
 
-    if col_filter is not None:
-        log.drop(col_filter, axis=1, inplace=True)# Alle Spalten mit Namen in spalten_filter werden herausgefiltert
+    log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
 
-    if delete_activities is not None:
-        filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) # Filtern nach Aktivitäten
-
-    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) # Filtern nach Startaktivitäten
-    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)# Filtern nach Endaktivitäten
+    filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
+    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) #Filtern nach Startaktivitäten
+    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)#Filtern nach Endaktivitäten
 
     return filtered_log
 
@@ -280,42 +283,56 @@ deleted_activities_iacs = ['PLATZHALTER']'''
 # DFG aus gefiltertem Log erstellen
 #dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
 
-#dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
+dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
+
+
+
+
+
+# Filtern nach Startaktivitäten
+def filter_by_start_activities(log, starts_to_keep):
+    filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
+    return filtered_log_start
+
+
+filtered_log_start_sepsis = filter_by_start_activities(filtered_log_sepsis, ['ER Registration']) # aktuell nur für sepsis
+
+# filtered_log_start_iacs = filter_by_start_activities(filtered_log_iacs, ['STARTAKTIVITÄT'])
 
 # Alpha Miner anwenden
 def run_alpha_miner(log):
     net, initial_marking, final_marking = pm4py.discover_petri_net_alpha(log)
     pm4py.view_petri_net(net, initial_marking, final_marking)
-    return net, initial_marking, final_marking # Ausgabe für Conformance Checking notwendig
+    return net, initial_marking, final_marking # Kann evtl. weg
 
-#net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
+net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
 
-# net_iacs, initial_marking_iacs, final_marking_iacs = run_alpha_miner(filtered_log_iacs)
+# alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
 
 # Heuristic Miner anwenden
 def run_heuristic_miner(log):
-    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.9)
+    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.99)
     pm4py.view_heuristics_net(heuristic_net)
 
 
-#run_heuristic_miner(filtered_log_sepsis)
+run_heuristic_miner(filtered_log_sepsis)
 
-# run_heuristic_miner(filtered_log_iacs)
+# run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
 
 # Inductive Miner anwenden
-def run_inductive_miner(log):
-    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log)
+def run_inductive_miner(log, noise_threshold=0.0):
+    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log, noise_threshold)
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
     return inductive_net, initial_marking_inductive, final_marking_inductive
 
-#ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
 
-# ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs)
+# ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
 
 # Varianten auflisten
 def show_filter_variants(log):
     variants = pm4py.get_variants(log)
-    print(f'Varianten: {variants}')
+    print(f'Varianten: {variants}') # Ausdruck zu lang
 
 
 show_filter_variants(filtered_log_sepsis)
@@ -329,19 +346,19 @@ def filter_by_variants(log, k):
 
 
 filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
-run_alpha_miner(filtered_log_var_sepsis)
+run_inductive_miner(filtered_log_var_sepsis)
 create_dfg_from_log(filtered_log_var_sepsis)
 
 
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
-# run_alpha_miner(filtered_log_var_iacs)
+# run_inductive_miner(filtered_log_var_iacs)
 # create_dfg_from_log(filtered_log_var_iacs)
 
 # Temporal Profile erstellen
 
 def get_temporal_profile(log):
     temporal_profile = temporal_profile_discovery.apply(log)
-    print(temporal_profile) #visualisieren
+    print(temporal_profile)
 
 
 get_temporal_profile(filtered_log_sepsis)
@@ -376,17 +393,17 @@ def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variab
     return pd.DataFrame(rows)
 
 
-# TBR mit Modell aus Alpha Miner
-def tbr_alpha(log, net, initial_marking, final_marking):
+# TBR mit Modell aus Inductive Miner
+def tbr_ind(log, net, initial_marking, final_marking):
     replayed_traces = pm4py.conformance_diagnostics_token_based_replay(log, net, initial_marking, final_marking)
     df_tbr = tbr_list_to_dataframe(replayed_traces)
-    print(f'Head des Token Based Replay mit Alpha Miner: \n{df_tbr.head(10)}')
+    print(f'Head des Token Based Replay mit Inductive Miner: \n{df_tbr.head(10)}')
     return df_tbr
 
 
-df_tbr_sepsis = tbr_alpha(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+df_tbr_sepsis = tbr_ind(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# df_tbr_iacs = tbr_alpha(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
+# df_tbr_iacs = tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
 def plot_tbr_fitness_hist(df_tbr: pd.DataFrame, bins: int = 20):
@@ -417,10 +434,98 @@ plot_tbr_fit_flag(df_tbr_sepsis)
 # plot_tbr_fitness_hist(df_tbr_iacs)
 # plot_tbr_fit_flag(df_tbr_iacs)
 
+
+
+
+
+
+
+# Throughput Analysis: TBR mit angepassten Einstellungen
+def tbr_throughput(log, net, initial_marking, final_marking):
+    parameters_tbr = {
+        token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.DISABLE_VARIANTS: True,
+        token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.ENABLE_PLTR_FITNESS: True
+    }
+    replayed_traces, place_fitness, trans_fitness, unwanted_activities = token_based_replay.apply(
+        log, net, initial_marking, final_marking, parameters=parameters_tbr
+    )
+    return replayed_traces, place_fitness, trans_fitness, unwanted_activities
+
+
+log_diagnostics_sepsis = pm4py.convert_to_event_log(filtered_log_sepsis)
+replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_activities_sepsis = tbr_throughput(log_diagnostics_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# log_diagnostics_iacs = pm4py.convert_to_event_log(filtered_log_iacs)
+# replayed_traces_iacs, place_fitness_iacs, trans_fitness_iacs, unwanted_activities_iacs = tbr_throughput(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+def througput_trans(log, trans_fitness):
+    trans_diagnostics = duration_diagnostics.diagnose_from_trans_fitness(log, trans_fitness)
+    for trans in trans_diagnostics:
+        print(trans, trans_diagnostics[trans])
+
+
+througput_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
+
+# througput_trans(filtered_log_iacs, trans_fitness_iacs)
+
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+def throughput_act(log, unwanted_activities):
+    act_diagnostics = duration_diagnostics.diagnose_from_notexisting_activities(log, unwanted_activities)
+    for act in act_diagnostics:
+        print(act, act_diagnostics[act])
+
+
+throughput_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
+
+# throughput_act(filtered_log_iacs, unwanted_activities_iacs)
+
+# Vorbereitung Root Cause Analysis
+string_attributes = ['org:group']
+numeric_attributes = []
+parameters = {'string_attributes': string_attributes, 'numeric_attributes': numeric_attributes}
+
+# Root Cause Analysis der falsch ausgeführten Transitionen
+def rca_trans(log, trans_fitness):
+    trans_root_cause = root_cause_analysis.diagnose_from_trans_fitness(log, trans_fitness, parameters=parameters)
+    for trans in trans_root_cause:
+        clf = trans_root_cause[trans]['clf']
+        feature_names = trans_root_cause[trans]['feature_names']
+        classes = trans_root_cause[trans]['classes']
+        # Visualization can be called
+        gviz = dt_vis.apply(clf, feature_names, classes)
+        dt_vis.view(gviz)
+
+
+rca_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
+
+# rca_trans(filtered_log_iacs, trans_fitness_iacs)
+
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+def rca_act(log, unwanted_activities):
+    act_root_cause = root_cause_analysis.diagnose_from_notexisting_activities(log, unwanted_activities, parameters=parameters)
+    for act in act_root_cause:
+        clf = act_root_cause[act]["clf"]
+        feature_names = act_root_cause[act]["feature_names"]
+        classes = act_root_cause[act]["classes"]
+        # Visualization can be called
+        gviz = dt_vis.apply(clf, feature_names, classes)
+        dt_vis.view(gviz)
+
+
+rca_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
+
+# rca_act(filtered_log_iacs, unwanted_activities_iacs)
+
+
+
+
+
+
 # Alignments bestimmen mit Modell aus Inductive Miner
 def alignments_inductive(log, net, initial_marking, final_marking):
     aligned_traces_ind = pm4py.conformance_diagnostics_alignments(log, net, initial_marking, final_marking)
-    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}')
+    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}') # Ausdruck zu lang
     return aligned_traces_ind
 
 aligned_traces_ind_sepsis = alignments_inductive(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
@@ -502,16 +607,16 @@ def get_replay_fitness_align(log, net, initial_marking, final_marking):
     print(f'Ergebnisse für die Fitness mit Alignments: {rp_fitness_align}')
 
 
-get_replay_fitness_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-get_replay_fitness_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_replay_fitness_tbr(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
-# get_replay_fitness_align(filtered_log_iacs, net_iacs, initial_marking_iacs, final_marking_iacs)
+# get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Precision zwischen Log und Modell berechnen (ETConformance (TBR) und Align-ETConformance(Alignments))
 def get_precision_tbr(log, net, initial_marking, final_marking):
     precision_tbr = pm4py.precision_token_based_replay(log, net, initial_marking, final_marking)
-    print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}')
+    print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}') # evtl. nur bestimmten Wert ausgeben
 
 
 def get_precision_align(log, net, initial_marking, final_marking):
@@ -519,16 +624,16 @@ def get_precision_align(log, net, initial_marking, final_marking):
     print(f'Die Precision mit Alignments beträgt: {precision_align}')
 
 
-get_precision_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-get_precision_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_precision_tbr(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-# get_precision_align(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-
-
+# get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 
-'''# Generalization und Simplicity zwischen Log und Modell berechnen
+
+
+# Generalization und Simplicity zwischen Log und Modell berechnen
 from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
 
 def get_generalization(log, net, initial_marking, final_marking):
@@ -543,11 +648,11 @@ def get_simplicity(log, net, initial_marking, final_marking):
     print(f'Die Simplicity beträgt: {simplicity}')
 
 
-get_generalization(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-get_simplicity(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
+get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_generalization(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)
-# get_simplicity(filtered_log_sepsis, net_sepsis, initial_marking_sepsis, final_marking_sepsis)'''
+# get_generalization(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# get_simplicity(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 
 
@@ -646,43 +751,41 @@ plot_events_per_day(filtered_log_sepsis)
 
 
 
-# Spalte umbenennen für Social Network Analysis
-'''log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
-
-# log_iacs_sna = filtered_log_iacs.rename(columns = {'ALTER SPALTENNAME' : 'org:resource'})'''
+# Spalte bei Sepsis-Datensatz umbenennen für Social Network Analysis
+log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
 
 # Übergabe von Arbeit ermitteln und anzeigen
-'''def get_handover_of_work(log):
+def get_handover_of_work(log):
     handover_values = pm4py.discover_handover_of_work_network(log)
     pm4py.view_sna(handover_values)
 
 
 get_handover_of_work(log_sepsis_sna)
 
-# get_handover_of_work(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# get_handover_of_work(log_iacs_sna)
 
 # Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
-'''def get_subcontracting(log):
+def get_subcontracting(log):
     subcont_values = pm4py.discover_subcontracting_network(log)
     pm4py.view_sna(subcont_values)
 
 
 get_subcontracting(log_sepsis_sna)
 
-# get_subcontracting(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# get_subcontracting(log_iacs_sna)
 
 # Ermitteln und Anzeigen, wie oft zusammengearbeitet wird
-'''def get_working_together(log):
+def get_working_together(log):
     work_together_values = pm4py.discover_working_together_network(log)
     pm4py.view_sna(work_together_values)
 
 
 get_working_together(log_sepsis_sna)
 
-# get_working_together(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# get_working_together(log_iacs_sna)
 
 # Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
-'''def get_similar_activities(log):
+def get_similar_activities(log):
     similar_act = pm4py.discover_activity_based_resource_similarity(log) # Benennung Var. wg Cluster-A.
     pm4py.view_sna(similar_act)
     return similar_act
@@ -690,17 +793,17 @@ get_working_together(log_sepsis_sna)
 
 similar_activities_sepsis = get_similar_activities(log_sepsis_sna)
 
-# similar_activities_iacs = get_similar_activities(log_iacs_sna)''' # Fehler: Column not found: org:resource
+# similar_activities_iacs = get_similar_activities(log_iacs_sna)
 
 # Orginisationale Rollen entdecken und ausgeben
-'''def get_orga_roles(log):
+def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
     print([x[0] for x in roles])
 
 
 get_orga_roles(log_sepsis_sna)
 
-# get_orga_roles(log_iacs_sna)''' # KeyError: org:resource
+# get_orga_roles(log_iacs_sna)
 
 # Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
 '''from pm4py.algo.organizational_mining.sna import util # wahrscheinlich nicht gut
@@ -711,6 +814,6 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
-# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # Var. von vorher nicht definiert
+# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # sklearn fehlt wohl, Visualisierung?
 
 
