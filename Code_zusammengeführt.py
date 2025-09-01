@@ -157,21 +157,21 @@ def import_xes(path_to_xes: str):
 
 # Import des Datensatzes
 log_sepsis = import_xes('sepsis_case.xes')
-log_sepsis.to_csv('log_sepsis.csv', index=False)
+#log_sepsis.to_csv('log_sepsis.csv', index=False)
 
-log_iacs = import_xes('log_iacs.xes') # Datei aktuell nicht hochgeladen
-log_iacs.to_csv('log_iacs.csv', index=False)
+log_iacs = import_xes('BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht hochgeladen
+#log_iacs.to_csv('log_iacs.csv', index=False)
 
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
-def sum_up_log (log):
-    print(f'Beschreibung des Datensatzes: \n{log.describe()}')
-    print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}')
+#def sum_up_log (log):
+    #print(f'Beschreibung des Datensatzes: \n{log.describe()}')
+    #print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}')
     
     
-sum_up_log(log_sepsis)
+#sum_up_log(log_sepsis)
 
-sum_up_log(log_iacs)
+#sum_up_log(log_iacs)
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
@@ -204,97 +204,83 @@ def create_dfg_from_log(log_input):
     return dfg_output
     
 
-dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
+#dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
 
-dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
+#dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 
 # Filteralgorithmus
 def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit = None, delete_activities = None, check_value_activities=None, col_filter=None):
     selected_activities = set()
     selected_end_acts = set()
+    filtered_log = log
 
-    for activity, count in start_acts.items(): #Iteration im Dict über den Namen der Startaktivität und ihre Häufigkeit.
-        if count / no_of_cases >= min_ratio: #Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamtfällen werden berücksichtigt.
-            selected_activities.add(activity) #Sammeln der Aktivitäten in einer Liste
+    for activity, count in start_acts.items(): # Iteration im Dict über den Namen der Startaktivität und ihre Häufigkeit.
+        if count / no_of_cases >= min_ratio: # Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamtfällen werden berücksichtigt.
+            selected_activities.add(activity) # Sammeln der Aktivitäten in einer Liste
     
     if end_crit is not None:
-        selected_end_acts = set(end_acts.keys()) - set(end_crit) #Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
+        selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
-    drop_mask = pd.Series(False, index=log.index) #Erstellen einer Maske mit Boolean-Werte
+    drop_mask = pd.Series(False, index=log.index) # Erstellen einer Maske mit Boolean-Werte
     
     
     if check_value_activities is not None:
-        for item in check_value_activities: #Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
+        for item in check_value_activities: # Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
-            is_activity = log["concept:name"] == item #True, wenn die Aktivität ausgeführt wrude
-            is_empty = log[item].isna() #True, wenn kein Laborwert eingetragen wurde
+            is_activity = log['concept:name'] == item # True, wenn die Aktivität ausgeführt wrude
+            is_empty = log[item].isna() # True, wenn kein Laborwert eingetragen wurde
             condition = is_activity & is_empty # True, nur wenn beide True sind
     
-            drop_mask = drop_mask | condition #Boolean-Werte werden der drop_mask hinzugefügt
+            drop_mask = drop_mask | condition # Boolean-Werte werden der drop_mask hinzugefügt
 
-        problematic_groups = log.loc[drop_mask, "org:group"].value_counts() #Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
-        print("Häufigkeit der Gruppen in fehlerhaften Zeilen:")
-        print(problematic_groups)
+        problematic_groups = log.loc[drop_mask, 'org:group'].value_counts() # Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
+        print(f'Häufigkeit der Gruppen in fehlerhaften Zeilen: {problematic_groups}')
     
-        log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
+        log.drop(index=log[drop_mask].index, inplace=True)# Alle Zeilen mit Boolean-Wert true werden herausgefiltert
 
-    log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
+    if col_filter is not None:
+        log.drop(col_filter, axis=1, inplace=True)# Alle Spalten mit Namen in spalten_filter werden herausgefiltert
 
-    filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
-    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) #Filtern nach Startaktivitäten
-    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)#Filtern nach Endaktivitäten
+    if delete_activities is not None:
+        filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) # Filtern nach Aktivitäten
+
+    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) # Filtern nach Startaktivitäten
+    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)# Filtern nach Endaktivitäten
 
     return filtered_log
 
-#Filterkriterien definieren
-criteria_end_sepsis = ['IV Antibiotics', 'ER Sepsis Triage', 'Leucocytes', 'IV Liquid', 'CRP', 'LacticAcid', 'Admission NC', 'ER Triage'] #Endaktivitäten, die herausgefiltert werden sollen
-deleted_activities_sepsis = ['Return ER'] #Aktivitäten die generell gelöscht werden sollen im Log
-activity_check_sepsis = ["Leucocytes", "LacticAcid", "CRP"] #Aktivitäten die auf ihre Vollständigkeit im Log überprüft werden sollen
-column_filter_sepsis = ["lifecycle:transition"] #alle complete
+# Filterkriterien definieren
+criteria_end_sepsis = ['IV Antibiotics', 'ER Sepsis Triage', 'Leucocytes', 'IV Liquid', 'CRP', 'LacticAcid', 'Admission NC', 'ER Triage'] # Endaktivitäten, die herausgefiltert werden sollen
+deleted_activities_sepsis = ['Return ER'] # Aktivitäten die generell gelöscht werden sollen im Log
+activity_check_sepsis = ['Leucocytes', 'LacticAcid', 'CRP'] # Aktivitäten die auf ihre Vollständigkeit im Log überprüft werden sollen
+column_filter_sepsis = ['lifecycle:transition'] # alle complete
 
 filtered_log_sepsis = filter_log(start_act_sepsis, end_act_sepsis, log_sepsis, cases_no_sepsis, end_crit = criteria_end_sepsis, 
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
-                                 col_filter=column_filter_sepsis) #Übergabe der Parameter an die Filter-Methode
-sum_up_log(filtered_log_sepsis)
-get_cases_events(filtered_log_sepsis)
+                                 col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
+#sum_up_log(filtered_log_sepsis)
+#get_cases_events(filtered_log_sepsis)
 
 
-column_filter_iacs = ["lifecycle:transition", "case:program-id", "case:penalty_BGKV", "case:penalty_BGP", "case:penalty_AVUVP", 
-                      "case:greening", "case:basic payment", "case:penalty_B5F", "case:penalty_JLP7", 
-                      "case:penalty_JLP5"] #complete, 215, False, False, False, True, True, False, False, False
+
+column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
+                      'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
+                      'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, col_filter=column_filter_iacs)
-sum_up_log(filtered_log_sepsis)
-get_cases_events(filtered_log_sepsis)
+#sum_up_log(filtered_log_iacs)
+#get_cases_events(filtered_log_iacs)
 
 '''criteria_end_iacs = ['PLATZHALTER']
-deleted_activities_iacs = ["PLATZHALTER"]
-
-filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit = criteria_end_iacs, delete_activities = deleted_activities_iacs)
-sum_up_log(filtered_log_iacs)
-get_cases_events(filtered_log_iacs)'''
+deleted_activities_iacs = ['PLATZHALTER']'''
 
 
 
 # DFG aus gefiltertem Log erstellen
-dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
+#dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
 
-dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
-
-
-
-
-
-# Filtern nach Startaktivitäten
-def filter_by_start_activities(log, starts_to_keep):
-    filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
-    return filtered_log_start
-
-
-filtered_log_start_sepsis = filter_by_start_activities(filtered_log_sepsis, ['ER Registration']) # aktuell nur für sepsis
-
-# filtered_log_start_iacs = filter_by_start_activities(filtered_log_iacs, ['STARTAKTIVITÄT'])
+#dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
 
 # Alpha Miner anwenden
 def run_alpha_miner(log):
@@ -302,17 +288,17 @@ def run_alpha_miner(log):
     pm4py.view_petri_net(net, initial_marking, final_marking)
     return net, initial_marking, final_marking # Ausgabe für Conformance Checking notwendig
 
-net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
+#net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
 
 # net_iacs, initial_marking_iacs, final_marking_iacs = run_alpha_miner(filtered_log_iacs)
 
 # Heuristic Miner anwenden
 def run_heuristic_miner(log):
-    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.99)
+    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.9)
     pm4py.view_heuristics_net(heuristic_net)
 
 
-run_heuristic_miner(filtered_log_sepsis)
+#run_heuristic_miner(filtered_log_sepsis)
 
 # run_heuristic_miner(filtered_log_iacs)
 
@@ -322,7 +308,7 @@ def run_inductive_miner(log):
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
     return inductive_net, initial_marking_inductive, final_marking_inductive
 
-ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
+#ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
 
 # ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs)
 
@@ -346,6 +332,7 @@ filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
 run_alpha_miner(filtered_log_var_sepsis)
 create_dfg_from_log(filtered_log_var_sepsis)
 
+
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
 # run_alpha_miner(filtered_log_var_iacs)
 # create_dfg_from_log(filtered_log_var_iacs)
@@ -354,7 +341,7 @@ create_dfg_from_log(filtered_log_var_sepsis)
 
 def get_temporal_profile(log):
     temporal_profile = temporal_profile_discovery.apply(log)
-    print(temporal_profile)
+    print(temporal_profile) #visualisieren
 
 
 get_temporal_profile(filtered_log_sepsis)
