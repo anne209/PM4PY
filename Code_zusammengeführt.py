@@ -163,21 +163,21 @@ def import_xes(path_to_xes: str):
 
 # Import des Datensatzes
 log_sepsis = import_xes('sepsis_case.xes')
-#log_sepsis.to_csv('log_sepsis.csv', index=False)
+log_sepsis.to_csv('log_sepsis.csv', index=False)
 
 log_iacs = import_xes('BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht hochgeladen
-#log_iacs.to_csv('log_iacs.csv', index=False)
+log_iacs.to_csv('log_iacs.csv', index=False)
 
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
-#def sum_up_log (log):
-    #print(f'Beschreibung des Datensatzes: \n{log.describe()}')
-    #print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}')
+def sum_up_log (log):
+    print(f'Beschreibung des Datensatzes: \n{log.describe()}')
+    print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}')
     
     
-#sum_up_log(log_sepsis)
+sum_up_log(log_sepsis)
 
-#sum_up_log(log_iacs)
+sum_up_log(log_iacs)
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
@@ -210,9 +210,9 @@ def create_dfg_from_log(log_input):
     return dfg_output
     
 
-#dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
+dfg_sepsis_unfiltered = create_dfg_from_log(log_sepsis)
 
-#dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
+dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 
 # Filteralgorithmus
@@ -245,10 +245,12 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     
         log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
 
-    log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
-
-    filtered_log = pm4py.filter_event_attribute_values(log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
-    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) #Filtern nach Startaktivitäten
+    if col_filter is not None:
+        log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
+    if delete_activities is not None:
+        filtered_log = pm4py.filter_event_attribute_values(filtered_log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
+    
+    filtered_log = pm4py.filter_start_activities(log, selected_activities) #Filtern nach Startaktivitäten
     filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)#Filtern nach Endaktivitäten
 
     return filtered_log
@@ -262,8 +264,8 @@ column_filter_sepsis = ['lifecycle:transition'] # alle complete
 filtered_log_sepsis = filter_log(start_act_sepsis, end_act_sepsis, log_sepsis, cases_no_sepsis, end_crit = criteria_end_sepsis, 
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
                                  col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
-#sum_up_log(filtered_log_sepsis)
-#get_cases_events(filtered_log_sepsis)
+sum_up_log(filtered_log_sepsis)
+get_cases_events(filtered_log_sepsis)
 
 
 
@@ -272,8 +274,8 @@ column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_B
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, col_filter=column_filter_iacs)
-#sum_up_log(filtered_log_iacs)
-#get_cases_events(filtered_log_iacs)
+sum_up_log(filtered_log_iacs)
+get_cases_events(filtered_log_iacs)
 
 '''criteria_end_iacs = ['PLATZHALTER']
 deleted_activities_iacs = ['PLATZHALTER']'''
@@ -281,7 +283,7 @@ deleted_activities_iacs = ['PLATZHALTER']'''
 
 
 # DFG aus gefiltertem Log erstellen
-#dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
+dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
 
 dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
 
@@ -297,7 +299,7 @@ def filter_by_start_activities(log, starts_to_keep):
 
 filtered_log_start_sepsis = filter_by_start_activities(filtered_log_sepsis, ['ER Registration']) # aktuell nur für sepsis
 
-# filtered_log_start_iacs = filter_by_start_activities(filtered_log_iacs, ['STARTAKTIVITÄT'])
+filtered_log_start_iacs = filter_by_start_activities(filtered_log_iacs, ['STARTAKTIVITÄT'])
 
 # Alpha Miner anwenden
 def run_alpha_miner(log):
@@ -307,7 +309,7 @@ def run_alpha_miner(log):
 
 net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
 
-# alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
+alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
 
 # Heuristic Miner anwenden
 def run_heuristic_miner(log):
