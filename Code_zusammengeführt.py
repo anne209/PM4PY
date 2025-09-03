@@ -181,8 +181,8 @@ sum_up_log(log_iacs)
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
-    cases_no = len(log_sepsis['case:concept:name'].unique())
-    events_no = len(log_sepsis)
+    cases_no = len(log['case:concept:name'].unique())
+    events_no = len(log)
     
     print(f'Anzahl Fälle: {cases_no}\nAnzahl Ereignisse: {events_no}')
     return cases_no
@@ -228,10 +228,11 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     if end_crit is not None:
         selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
-    drop_mask = pd.Series(False, index=log.index) # Erstellen einer Maske mit Boolean-Werte
-    
     
     if check_value_activities is not None:
+
+        drop_mask = pd.Series(False, index=log.index) # Erstellen einer Maske mit Boolean-Werte
+
         for item in check_value_activities: # Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
             is_activity = log['concept:name'] == item # True, wenn die Aktivität ausgeführt wrude
@@ -272,14 +273,11 @@ get_cases_events(filtered_log_sepsis)
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
+criteria_end_iacs = []
 
-filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, col_filter=column_filter_iacs)
+filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 sum_up_log(filtered_log_iacs)
 get_cases_events(filtered_log_iacs)
-
-'''criteria_end_iacs = ['PLATZHALTER']
-deleted_activities_iacs = ['PLATZHALTER']'''
-
 
 
 # DFG aus gefiltertem Log erstellen
