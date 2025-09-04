@@ -231,28 +231,29 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     
     if check_value_activities is not None:
 
-        drop_mask = pd.Series(False, index=log.index) # Erstellen einer Maske mit Boolean-Werte
+        drop_mask = pd.Series(False, index=filtered_log.index) # Erstellen einer Maske mit Boolean-Werte
 
         for item in check_value_activities: # Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
-            is_activity = log['concept:name'] == item # True, wenn die Aktivität ausgeführt wrude
-            is_empty = log[item].isna() # True, wenn kein Laborwert eingetragen wurde
+            is_activity = filtered_log['concept:name'] == item # True, wenn die Aktivität ausgeführt wrude
+            is_empty = filtered_log[item].isna() # True, wenn kein Laborwert eingetragen wurde
             condition = is_activity & is_empty # True, nur wenn beide True sind
     
             drop_mask = drop_mask | condition # Boolean-Werte werden der drop_mask hinzugefügt
 
-        problematic_groups = log.loc[drop_mask, 'org:group'].value_counts() # Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
+        problematic_groups = filtered_log.loc[drop_mask, 'org:group'].value_counts() # Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
         print(f'Häufigkeit der Gruppen in fehlerhaften Zeilen: {problematic_groups}')
     
-        log.drop(index=log[drop_mask].index, inplace=True)#Alle Zeilen mit Boolean-Wert true werden herausgefiltert
+        filtered_log.drop(index=filtered_log[drop_mask].index, inplace=True)# Alle Zeilen mit Boolean-Wert true werden herausgefiltert
 
     if col_filter is not None:
-        log.drop(col_filter, axis=1, inplace=True)#Alle Spalten mit Namen in spalten_filter werden herausgefiltert
-    if delete_activities is not None:
-        filtered_log = pm4py.filter_event_attribute_values(filtered_log, 'concept:name', delete_activities, level='event', retain=False) #filtern nach Aktivitäten
+        filtered_log.drop(col_filter, axis=1, inplace=True)# Alle Spalten mit Namen in spalten_filter werden herausgefiltert
     
-    filtered_log = pm4py.filter_start_activities(log, selected_activities) #Filtern nach Startaktivitäten
-    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)#Filtern nach Endaktivitäten
+    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) # Filtern nach Startaktivitäten
+    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)# Filtern nach Endaktivitäten
+
+    if delete_activities is not None:
+        filtered_log = pm4py.filter_event_attribute_values(filtered_log, 'concept:name', delete_activities, level='event', retain=False) # filtern nach Aktivitäten
 
     return filtered_log
 
@@ -285,19 +286,6 @@ dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
 
 dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
 
-
-
-
-
-# Filtern nach Startaktivitäten
-def filter_by_start_activities(log, starts_to_keep):
-    filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
-    return filtered_log_start
-
-
-filtered_log_start_sepsis = filter_by_start_activities(filtered_log_sepsis, ['ER Registration']) # aktuell nur für sepsis
-
-filtered_log_start_iacs = filter_by_start_activities(filtered_log_iacs, ['STARTAKTIVITÄT'])
 
 # Alpha Miner anwenden
 def run_alpha_miner(log):
@@ -625,7 +613,7 @@ def get_precision_align(log, net, initial_marking, final_marking):
 
 
 get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+# get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
 # get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 # get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
@@ -711,7 +699,7 @@ plot_activity_frequencies(filtered_log_sepsis)
 # plot_activity_frequencies(filtered_log_iacs)
 
 
-def plot_case_duration_hist(obj, bins: int = 30):
+def plot_case_duration_hist(obj, bins: int = 30): # Durchlaufzeit der Fälle
     df = ensure_df(obj)
     cid = 'case:concept:name'
     ts  = 'time:timestamp'
