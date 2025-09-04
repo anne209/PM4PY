@@ -14,6 +14,8 @@ from pm4py.algo.conformance.tokenreplay import algorithm as token_based_replay
 from pm4py.algo.conformance.tokenreplay.diagnostics import duration_diagnostics
 from pm4py.algo.conformance.tokenreplay.diagnostics import root_cause_analysis
 from pm4py.visualization.decisiontree import visualizer as dt_vis
+from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
+from pm4py.algo.evaluation.simplicity import algorithm as simplicity_evaluator
 from pm4py.util import constants
 from pm4py.statistics.traces.generic.log import case_statistics
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
@@ -661,14 +663,10 @@ get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sep
 
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
-from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
-
 def get_generalization(log, net, initial_marking, final_marking):
     generalization = generalization_evaluator.apply(log, net, initial_marking, final_marking)
     print(f'Die Generalization beträgt: {generalization}')
 
-
-from pm4py.algo.evaluation.simplicity import algorithm as simplicity_evaluator
 
 def get_simplicity(log, net, initial_marking, final_marking):
     simplicity = simplicity_evaluator.apply(net)
