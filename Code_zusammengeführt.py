@@ -8,11 +8,14 @@ import sklearn
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
-from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
+from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery # doppelt
+from pm4py.visualization.petri_net import visualizer as pn_visualizer # für Zusatzinfos Performance
 from pm4py.algo.conformance.tokenreplay import algorithm as token_based_replay
-from pm4py.algo.conformance.tokenreplay.diagnostics import duration_diagnostics
+from pm4py.algo.conformance.tokenreplay.diagnostics import duration_diagnostics # doppelt
 from pm4py.algo.conformance.tokenreplay.diagnostics import root_cause_analysis
 from pm4py.visualization.decisiontree import visualizer as dt_vis
+from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
+from pm4py.algo.evaluation.simplicity import algorithm as simplicity_evaluator
 from pm4py.util import constants
 from pm4py.statistics.traces.generic.log import case_statistics
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
@@ -356,6 +359,32 @@ get_temporal_profile(filtered_log_sepsis)
 
 
 
+# Performance-DFG erzeugen
+def get_performance_dfg(log):
+    perf_dfg, start_activities, end_activities = pm4py.discover_performance_dfg(log)
+    pm4py.view_performance_dfg(perf_dfg, start_activities, end_activities)
+
+
+get_performance_dfg(filtered_log_sepsis)
+
+# get_performance_dfg(filtered_log_iacs)
+
+# Performance-Informationen zu Netz aus Inductive Miner hinzufügen
+def get_performance_net(log, net, initial_marking, final_marking):
+    parameters = {pn_visualizer.Variants.PERFORMANCE.value.Parameters.FORMAT: "png"}
+    gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters, variant=pn_visualizer.Variants.PERFORMANCE, log=log)
+    pn_visualizer.view(gviz)
+
+
+get_performance_net(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# get_performance_net(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+
+
+
+
+
 
 
 # Helfer TBR
@@ -622,14 +651,10 @@ get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsi
 
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
-from pm4py.algo.evaluation.generalization import algorithm as generalization_evaluator
-
 def get_generalization(log, net, initial_marking, final_marking):
     generalization = generalization_evaluator.apply(log, net, initial_marking, final_marking)
     print(f'Die Generalization beträgt: {generalization}')
 
-
-from pm4py.algo.evaluation.simplicity import algorithm as simplicity_evaluator
 
 def get_simplicity(log, net, initial_marking, final_marking):
     simplicity = simplicity_evaluator.apply(net)
