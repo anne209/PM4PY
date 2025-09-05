@@ -617,38 +617,54 @@ plot_move_type_bars(df_stats_sepsis)
 def get_replay_fitness_tbr(log, net, initial_marking, final_marking):
     rp_fitness_tbr = pm4py.fitness_token_based_replay(log, net, initial_marking, final_marking)
     print(f'Ergebnisse für die Fitness mit Token-Based Replay: {rp_fitness_tbr}')
+    return rp_fitness_tbr['log_fitness']
 
 
 def get_replay_fitness_align(log, net, initial_marking, final_marking):
     rp_fitness_align = pm4py.fitness_alignments(log, net, initial_marking, final_marking)
     print(f'Ergebnisse für die Fitness mit Alignments: {rp_fitness_align}')
+    return rp_fitness_align['log_fitness']
 
 
-get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fitness_tbr_sepsis = get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fitness_align_sepsis = get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
-# get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# fitness_tbr_iacs = get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# fitness_align_iacs get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Precision zwischen Log und Modell berechnen (ETConformance (TBR) und Align-ETConformance(Alignments))
 def get_precision_tbr(log, net, initial_marking, final_marking):
     precision_tbr = pm4py.precision_token_based_replay(log, net, initial_marking, final_marking)
     print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}') # evtl. nur bestimmten Wert ausgeben
+    return precision_tbr
 
 
 def get_precision_align(log, net, initial_marking, final_marking):
     precision_align = pm4py.precision_alignments(log, net, initial_marking, final_marking)
     print(f'Die Precision mit Alignments beträgt: {precision_align}')
+    return precision_align
 
 
-get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-# get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+precision_tbr_sepsis = get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+# precision_align_sepsis = get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
-# get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# precision_tbr_iacs = get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# precision_align_iacs = get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
+def get_f1_score(fitness, precision):
+    if fitness + precision == 0: # Division durch 0 vermeiden
+        return 0.0
+    f1_score = 2 * (fitness * precision) / (fitness + precision)
+    print(f'Der F1-Score beträgt: {f1_score}')
+    return f1_score
 
 
+f1_score_tbr_sepsis = get_f1_score(fitness_tbr_sepsis, precision_tbr_sepsis)
+# f1_score_align_sepsis = get_f1_score(fitness_align_sepsis, precision_align_sepsis)
 
+# f1_score_tbr_iacs = get_f1_score(fitness_tbr_iacs, precision_tbr_iacs)
+# f1_score_align_iacs = get_f1_score(fitness_align_iacs, precision_align_iacs)
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
 def get_generalization(log, net, initial_marking, final_marking):
