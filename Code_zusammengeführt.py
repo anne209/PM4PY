@@ -715,9 +715,10 @@ get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, 
 
 
 # Erstellen eines Histogramms der Startaktivitäten
-def plot_start_activities(log, start_activities):
+def plot_start_activities(log):
     df = ensure_df(log)
-    counts = start_activities.value_counts() # Zählen der Startaktivitäten
+    first_acts = df.groupby('case:concept:name')['concept:name'].first() # Erste Aktivität pro Fall ermitteln
+    counts = first_acts.value_counts() # Zählen der Startaktivitäten
     
     plt.figure(figsize=(10, 6))
     plt.bar(range(len(counts)), counts.values)
@@ -729,14 +730,15 @@ def plot_start_activities(log, start_activities):
     plt.show()
 
 
-plot_start_activities(filtered_log_sepsis, start_act_sepsis)
+plot_start_activities(filtered_log_sepsis)
 
-# plot_start_activities(filtered_log_iacs, start_act_iacs)
+# plot_start_activities(filtered_log_iacs)
     
 # Erstellen eines Histogramms der Endaktivitäten
-def plot_end_activities(log, end_activities):
+def plot_end_activities(log):
     df = ensure_df(log)
-    counts = end_activities.value_counts() # Zählen der Endaktivitäten
+    last_acts = df.groupby('case:concept:name')['concept:name'].last() # Letzte Aktivität pro Fall ermitteln
+    counts = last_acts.value_counts() # Zählen der Endaktivitäten
     
     plt.figure(figsize=(10, 6))
     plt.bar(range(len(counts)), counts.values)
@@ -748,10 +750,9 @@ def plot_end_activities(log, end_activities):
     plt.show()
 
 
-plot_start_activities(filtered_log_sepsis, end_act_sepsis)
+plot_end_activities(filtered_log_sepsis)
 
-# plot_start_activities(filtered_log_iacs, end_act_iacs)
-
+# plot_end_activities(filtered_log_iacs)
 
 
 
