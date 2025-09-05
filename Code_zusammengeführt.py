@@ -356,8 +356,32 @@ get_temporal_profile(filtered_log_sepsis)
 
 # get_temporal_profile(filtered_log_iacs)
 
+# Umwandeln in Dataframe und Datetime, falls erforderlich
+def ensure_df(obj) -> pd.DataFrame:
+    if isinstance(obj, pd.DataFrame):
+        return obj.copy()
+    return pm4py.convert_to_dataframe(obj)
 
 
+def parse_ts(series: pd.Series) -> pd.Series:
+    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
+
+
+# Mittlere Durchlaufzeit pro Fall berechnen
+def get_mean_throughput(log):
+    df = ensure_df(log)
+    df['time:timestamp'] = parse_ts(df['time:timestamp']) # Zeitstempel in Datetime umwandeln, sofern erforderlich
+    case_durations = df.groupby('case:concept:name').agg({'time:timestamp': ['min', 'max']}) # Gruppieren nach Case ID und Berechnen der Dauer
+    durations = (case_durations['time:timestamp']['max'] - case_durations['time:timestamp']['min']).dt.total_seconds() / 3600 # Fallweise Dauer in Stunden pro Case berechnen
+    
+    mean_throughput = durations.mean()
+    print(f'Die mittlere Durchlaufzeit pro Fall beträgt: {mean_throughput} Stunden')
+    return mean_throughput
+
+
+mean_throughput_sepsis = get_mean_throughput(filtered_log_sepsis)
+
+# mean_throughput_iacs = get_mean_throughput(filtered_log_iacs)
 
 # Performance-DFG erzeugen
 def get_performance_dfg(log):
@@ -684,24 +708,6 @@ get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, 
 # get_simplicity(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 
-
-
-
-
-
-
-
-
-
-
-def ensure_df(obj) -> pd.DataFrame:
-    if isinstance(obj, pd.DataFrame):
-        return obj.copy()
-    return pm4py.convert_to_dataframe(obj)
-
-
-def parse_ts(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
 
 
 
