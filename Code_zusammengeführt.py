@@ -714,12 +714,43 @@ get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, 
 
 
 
-
-'''def plot_start_activities(obj):
-    df = ensure_df(obj)'''
+# Erstellen eines Histogramms der Startaktivitäten
+def plot_start_activities(log, start_activities):
+    df = ensure_df(log)
+    counts = start_activities.value_counts() # Zählen der Startaktivitäten
     
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(counts)), counts.values)
+    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
+    plt.xlabel('Startaktivität')
+    plt.ylabel('Anzahl der Fälle')
+    plt.title('Startaktivitäten')
+    plt.tight_layout()
+    plt.show()
 
 
+plot_start_activities(filtered_log_sepsis, start_act_sepsis)
+
+# plot_start_activities(filtered_log_iacs, start_act_iacs)
+    
+# Erstellen eines Histogramms der Endaktivitäten
+def plot_end_activities(log, end_activities):
+    df = ensure_df(log)
+    counts = end_activities.value_counts() # Zählen der Endaktivitäten
+    
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(counts)), counts.values)
+    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
+    plt.xlabel('Endaktivität')
+    plt.ylabel('Anzahl der Fälle')
+    plt.title('Endaktivitäten')
+    plt.tight_layout()
+    plt.show()
+
+
+plot_start_activities(filtered_log_sepsis, end_act_sepsis)
+
+# plot_start_activities(filtered_log_iacs, end_act_iacs)
 
 
 
@@ -849,6 +880,6 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
-# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # sklearn fehlt wohl, Visualisierung?
+# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' 
 
 
