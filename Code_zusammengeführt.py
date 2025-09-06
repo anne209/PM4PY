@@ -843,7 +843,7 @@ def get_handover_of_work(log):
 
 get_handover_of_work(log_sepsis_sna)
 
-# get_handover_of_work(log_iacs_sna)
+# get_handover_of_work(filtered_log_iacs)
 
 # Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
 def get_subcontracting(log):
@@ -853,7 +853,7 @@ def get_subcontracting(log):
 
 get_subcontracting(log_sepsis_sna)
 
-# get_subcontracting(log_iacs_sna)
+# get_subcontracting(filtered_log_iacs)
 
 # Ermitteln und Anzeigen, wie oft zusammengearbeitet wird
 def get_working_together(log):
@@ -863,7 +863,7 @@ def get_working_together(log):
 
 get_working_together(log_sepsis_sna)
 
-# get_working_together(log_iacs_sna)
+# get_working_together(filtered_log_iacs)
 
 # Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
 def get_similar_activities(log):
@@ -874,17 +874,17 @@ def get_similar_activities(log):
 
 similar_activities_sepsis = get_similar_activities(log_sepsis_sna)
 
-# similar_activities_iacs = get_similar_activities(log_iacs_sna)
+# similar_activities_iacs = get_similar_activities(filtered_log_iacs)
 
 # Orginisationale Rollen entdecken und ausgeben
 def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
-    print([x[0] for x in roles])
+    print(f'Organisationale Rollen: {roles}')
 
 
 get_orga_roles(log_sepsis_sna)
 
-# get_orga_roles(log_iacs_sna)
+# get_orga_roles(filtered_log_iacs)
 
 # Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
 '''from pm4py.algo.organizational_mining.sna import util # wahrscheinlich nicht gut
@@ -895,6 +895,6 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
-# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' 
+# cluster_similar_act(filtered_log_iacs, similar_activities_iacs)''' 
 
 
