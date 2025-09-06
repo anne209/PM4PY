@@ -2,6 +2,7 @@
 # Libraries importieren
 import pm4py
 import pandas as pd
+import numpy as np
 import os
 import matplotlib.pyplot as plt
 import sklearn
@@ -376,12 +377,8 @@ def parse_ts(series: pd.Series) -> pd.Series:
 
 # Mittlere Durchlaufzeit pro Fall berechnen
 def get_mean_throughput(log):
-    df = ensure_df(log)
-    df['time:timestamp'] = parse_ts(df['time:timestamp']) # Zeitstempel in Datetime umwandeln, sofern erforderlich
-    case_durations = df.groupby('case:concept:name').agg({'time:timestamp': ['min', 'max']}) # Gruppieren nach Case ID und Berechnen der Dauer
-    durations = (case_durations['time:timestamp']['max'] - case_durations['time:timestamp']['min']).dt.total_seconds() / 3600 # Fallweise Dauer in Stunden pro Case berechnen
-    
-    mean_throughput = durations.mean()
+    durations = pm4py.get_all_case_durations(log)
+    mean_throughput = np.mean(durations) / 3600 # Umrechnung in Stunden
     print(f'Die mittlere Durchlaufzeit pro Fall beträgt: {mean_throughput} Stunden')
     return mean_throughput
 
