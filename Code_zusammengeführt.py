@@ -354,8 +354,10 @@ for i in [1, 5]:
 
 def get_temporal_profile(log):
     temporal_profile = temporal_profile_discovery.apply(log)
-    print(temporal_profile)
-
+    with open('temporal_profile.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for key, value in temporal_profile.items():
+            writer.writerow([key, value])
 
 get_temporal_profile(filtered_log_sepsis)
 
@@ -495,6 +497,13 @@ def tbr_throughput(log, net, initial_marking, final_marking):
     replayed_traces, place_fitness, trans_fitness, unwanted_activities = token_based_replay.apply(
         log, net, initial_marking, final_marking, parameters=parameters_tbr
     )
+
+    df_tbr = tbr_list_to_dataframe(replayed_traces)
+    print(f'Head des Token Based Replay mit Throughput Analysis: \n{df_tbr.head(10)}')
+    print(place_fitness)
+    print(trans_fitness)
+    print(unwanted_activities)
+
     return replayed_traces, place_fitness, trans_fitness, unwanted_activities
 
 
