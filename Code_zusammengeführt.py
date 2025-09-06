@@ -361,8 +361,32 @@ get_temporal_profile(filtered_log_sepsis)
 
 # get_temporal_profile(filtered_log_iacs)
 
+# Umwandeln in Dataframe und Datetime, falls erforderlich
+def ensure_df(obj) -> pd.DataFrame:
+    if isinstance(obj, pd.DataFrame):
+        return obj.copy()
+    return pm4py.convert_to_dataframe(obj)
 
 
+def parse_ts(series: pd.Series) -> pd.Series:
+    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
+
+
+# Mittlere Durchlaufzeit pro Fall berechnen
+def get_mean_throughput(log):
+    df = ensure_df(log)
+    df['time:timestamp'] = parse_ts(df['time:timestamp']) # Zeitstempel in Datetime umwandeln, sofern erforderlich
+    case_durations = df.groupby('case:concept:name').agg({'time:timestamp': ['min', 'max']}) # Gruppieren nach Case ID und Berechnen der Dauer
+    durations = (case_durations['time:timestamp']['max'] - case_durations['time:timestamp']['min']).dt.total_seconds() / 3600 # Fallweise Dauer in Stunden pro Case berechnen
+    
+    mean_throughput = durations.mean()
+    print(f'Die mittlere Durchlaufzeit pro Fall beträgt: {mean_throughput} Stunden')
+    return mean_throughput
+
+
+mean_throughput_sepsis = get_mean_throughput(filtered_log_sepsis)
+
+# mean_throughput_iacs = get_mean_throughput(filtered_log_iacs)
 
 # Performance-DFG erzeugen
 def get_performance_dfg(log):
@@ -622,38 +646,54 @@ plot_move_type_bars(df_stats_sepsis)
 def get_replay_fitness_tbr(log, net, initial_marking, final_marking):
     rp_fitness_tbr = pm4py.fitness_token_based_replay(log, net, initial_marking, final_marking)
     print(f'Ergebnisse für die Fitness mit Token-Based Replay: {rp_fitness_tbr}')
+    return rp_fitness_tbr['log_fitness']
 
 
 def get_replay_fitness_align(log, net, initial_marking, final_marking):
     rp_fitness_align = pm4py.fitness_alignments(log, net, initial_marking, final_marking)
     print(f'Ergebnisse für die Fitness mit Alignments: {rp_fitness_align}')
+    return rp_fitness_align['log_fitness']
 
 
-get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fitness_tbr_sepsis = get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fitness_align_sepsis = get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
-# get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# fitness_tbr_iacs = get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# fitness_align_iacs get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Precision zwischen Log und Modell berechnen (ETConformance (TBR) und Align-ETConformance(Alignments))
 def get_precision_tbr(log, net, initial_marking, final_marking):
     precision_tbr = pm4py.precision_token_based_replay(log, net, initial_marking, final_marking)
     print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}') # evtl. nur bestimmten Wert ausgeben
+    return precision_tbr
 
 
 def get_precision_align(log, net, initial_marking, final_marking):
     precision_align = pm4py.precision_alignments(log, net, initial_marking, final_marking)
     print(f'Die Precision mit Alignments beträgt: {precision_align}')
+    return precision_align
 
 
-get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-# get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+precision_tbr_sepsis = get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+# precision_align_sepsis = get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
-# get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# precision_tbr_iacs = get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# precision_align_iacs = get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
+def get_f1_score(fitness, precision):
+    if fitness + precision == 0: # Division durch 0 vermeiden
+        return 0.0
+    f1_score = 2 * (fitness * precision) / (fitness + precision)
+    print(f'Der F1-Score beträgt: {f1_score}')
+    return f1_score
 
 
+f1_score_tbr_sepsis = get_f1_score(fitness_tbr_sepsis, precision_tbr_sepsis)
+# f1_score_align_sepsis = get_f1_score(fitness_align_sepsis, precision_align_sepsis)
 
+# f1_score_tbr_iacs = get_f1_score(fitness_tbr_iacs, precision_tbr_iacs)
+# f1_score_align_iacs = get_f1_score(fitness_align_iacs, precision_align_iacs)
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
 def get_generalization(log, net, initial_marking, final_marking):
@@ -679,31 +719,45 @@ get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, 
 
 
 
-
-
-
-
-def ensure_df(obj) -> pd.DataFrame:
-    if isinstance(obj, pd.DataFrame):
-        return obj.copy()
-    return pm4py.convert_to_dataframe(obj)
-
-
-def parse_ts(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
-
-
-
-
-
-
-
-'''def plot_start_activities(obj):
-    df = ensure_df(obj)'''
+# Erstellen eines Histogramms der Startaktivitäten
+def plot_start_activities(log):
+    df = ensure_df(log)
+    first_acts = df.groupby('case:concept:name')['concept:name'].first() # Erste Aktivität pro Fall ermitteln
+    counts = first_acts.value_counts() # Zählen der Startaktivitäten
     
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(counts)), counts.values)
+    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
+    plt.xlabel('Startaktivität')
+    plt.ylabel('Anzahl der Fälle')
+    plt.title('Startaktivitäten')
+    plt.tight_layout()
+    plt.show()
 
 
+plot_start_activities(filtered_log_sepsis)
 
+# plot_start_activities(filtered_log_iacs)
+    
+# Erstellen eines Histogramms der Endaktivitäten
+def plot_end_activities(log):
+    df = ensure_df(log)
+    last_acts = df.groupby('case:concept:name')['concept:name'].last() # Letzte Aktivität pro Fall ermitteln
+    counts = last_acts.value_counts() # Zählen der Endaktivitäten
+    
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(counts)), counts.values)
+    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
+    plt.xlabel('Endaktivität')
+    plt.ylabel('Anzahl der Fälle')
+    plt.title('Endaktivitäten')
+    plt.tight_layout()
+    plt.show()
+
+
+plot_end_activities(filtered_log_sepsis)
+
+# plot_end_activities(filtered_log_iacs)
 
 
 
@@ -832,6 +886,6 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
-# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' # sklearn fehlt wohl, Visualisierung?
+# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' 
 
 
