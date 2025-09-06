@@ -410,7 +410,14 @@ get_performance_net(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sep
 
 
 
+# Process Tree Inductive
+def get_process_tree_ind(log):
+    tree = pm4py.discover_process_tree_inductive(log)
+    pm4py.view_process_tree(tree, format='png')
 
+get_process_tree_ind(filtered_log_sepsis)
+
+# get_process_tree_ind(filtered_log_iacs)
 
 
 
