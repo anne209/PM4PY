@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import sklearn
+import csv
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
@@ -323,7 +324,11 @@ ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_induc
 # Varianten auflisten
 def show_filter_variants(log):
     variants = pm4py.get_variants(log)
-    print(f'Varianten: {variants}') # Ausdruck zu lang
+    with open('variants_output.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for key, value in variants.items():
+            writer.writerow([key, value])
+    #print(f'Varianten: {variants}') # Ausdruck zu lang
 
 
 show_filter_variants(filtered_log_sepsis)
@@ -335,10 +340,11 @@ def filter_by_variants(log, k):
     filtered_log_var = pm4py.filter_variants_top_k(log, k)
     return filtered_log_var
 
-
-filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, 5)
-run_inductive_miner(filtered_log_var_sepsis)
-create_dfg_from_log(filtered_log_var_sepsis)
+k=5
+for i in range(1, k + 1):
+    filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, i)
+    run_inductive_miner(filtered_log_var_sepsis)
+    create_dfg_from_log(filtered_log_var_sepsis)
 
 
 # filtered_log_var_iacs = filter_by_vars(filtered_log_iacs, 5)
