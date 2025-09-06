@@ -340,8 +340,7 @@ def filter_by_variants(log, k):
     filtered_log_var = pm4py.filter_variants_top_k(log, k)
     return filtered_log_var
 
-k=5
-for i in range(1, k + 1):
+for i in [1, 5]:
     filtered_log_var_sepsis = filter_by_variants(filtered_log_sepsis, i)
     run_inductive_miner(filtered_log_var_sepsis)
     create_dfg_from_log(filtered_log_var_sepsis)
