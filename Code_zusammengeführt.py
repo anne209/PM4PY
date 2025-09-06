@@ -302,15 +302,16 @@ net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filte
 
 alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
 
-# Heuristic Miner anwenden
-def run_heuristic_miner(log):
-    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.99)
+# Heuristic Miner anwenden und in Petri-Netz umwandeln
+def run_heuristic_miner(log, dependency_threshold=0.99):
+    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold)
     pm4py.view_heuristics_net(heuristic_net)
+    heuristic_to_petri = pm4py.objects.conversion.heuristics_net.variants.to_petri_net.apply(heuristic_net, parameters=None)
+    return heuristic_to_petri
 
+heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis = run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.0)
 
-run_heuristic_miner(filtered_log_sepsis)
-
-# run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
+#heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
 
 # Inductive Miner anwenden
 def run_inductive_miner(log, noise_threshold=0.0):
@@ -318,7 +319,7 @@ def run_inductive_miner(log, noise_threshold=0.0):
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
     return inductive_net, initial_marking_inductive, final_marking_inductive
 
-ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis, noise_threshold=0.0)
 
 # ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
 
