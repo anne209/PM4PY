@@ -2,6 +2,7 @@
 # Libraries importieren
 import pm4py
 import pandas as pd
+import numpy as np
 import os
 import matplotlib.pyplot as plt
 import sklearn
@@ -301,15 +302,16 @@ net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filte
 
 alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
 
-# Heuristic Miner anwenden
-def run_heuristic_miner(log):
-    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold=0.99)
+# Heuristic Miner anwenden und in Petri-Netz umwandeln
+def run_heuristic_miner(log, dependency_threshold=0.99):
+    heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold)
     pm4py.view_heuristics_net(heuristic_net)
+    heuristic_to_petri = pm4py.objects.conversion.heuristics_net.variants.to_petri_net.apply(heuristic_net, parameters=None)
+    return heuristic_to_petri
 
+heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis = run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.0)
 
-run_heuristic_miner(filtered_log_sepsis)
-
-# run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
+#heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
 
 # Inductive Miner anwenden
 def run_inductive_miner(log, noise_threshold=0.0):
@@ -317,7 +319,7 @@ def run_inductive_miner(log, noise_threshold=0.0):
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
     return inductive_net, initial_marking_inductive, final_marking_inductive
 
-ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis)
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = run_inductive_miner(filtered_log_sepsis, noise_threshold=0.0)
 
 # ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
 
@@ -376,12 +378,8 @@ def parse_ts(series: pd.Series) -> pd.Series:
 
 # Mittlere Durchlaufzeit pro Fall berechnen
 def get_mean_throughput(log):
-    df = ensure_df(log)
-    df['time:timestamp'] = parse_ts(df['time:timestamp']) # Zeitstempel in Datetime umwandeln, sofern erforderlich
-    case_durations = df.groupby('case:concept:name').agg({'time:timestamp': ['min', 'max']}) # Gruppieren nach Case ID und Berechnen der Dauer
-    durations = (case_durations['time:timestamp']['max'] - case_durations['time:timestamp']['min']).dt.total_seconds() / 3600 # Fallweise Dauer in Stunden pro Case berechnen
-    
-    mean_throughput = durations.mean()
+    durations = pm4py.get_all_case_durations(log)
+    mean_throughput = np.mean(durations) / 3600 # Umrechnung in Stunden
     print(f'Die mittlere Durchlaufzeit pro Fall beträgt: {mean_throughput} Stunden')
     return mean_throughput
 
@@ -413,7 +411,14 @@ get_performance_net(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sep
 
 
 
+# Process Tree Inductive
+def get_process_tree_ind(log):
+    tree = pm4py.discover_process_tree_inductive(log)
+    pm4py.view_process_tree(tree, format='png')
 
+get_process_tree_ind(filtered_log_sepsis)
+
+# get_process_tree_ind(filtered_log_iacs)
 
 
 
@@ -843,7 +848,7 @@ def get_handover_of_work(log):
 
 get_handover_of_work(log_sepsis_sna)
 
-# get_handover_of_work(log_iacs_sna)
+# get_handover_of_work(filtered_log_iacs)
 
 # Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
 def get_subcontracting(log):
@@ -853,7 +858,7 @@ def get_subcontracting(log):
 
 get_subcontracting(log_sepsis_sna)
 
-# get_subcontracting(log_iacs_sna)
+# get_subcontracting(filtered_log_iacs)
 
 # Ermitteln und Anzeigen, wie oft zusammengearbeitet wird
 def get_working_together(log):
@@ -863,7 +868,7 @@ def get_working_together(log):
 
 get_working_together(log_sepsis_sna)
 
-# get_working_together(log_iacs_sna)
+# get_working_together(filtered_log_iacs)
 
 # Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
 def get_similar_activities(log):
@@ -874,17 +879,17 @@ def get_similar_activities(log):
 
 similar_activities_sepsis = get_similar_activities(log_sepsis_sna)
 
-# similar_activities_iacs = get_similar_activities(log_iacs_sna)
+# similar_activities_iacs = get_similar_activities(filtered_log_iacs)
 
 # Orginisationale Rollen entdecken und ausgeben
 def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
-    print([x[0] for x in roles])
+    print(f'Organisationale Rollen: {roles}')
 
 
 get_orga_roles(log_sepsis_sna)
 
-# get_orga_roles(log_iacs_sna)
+# get_orga_roles(filtered_log_iacs)
 
 # Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
 '''from pm4py.algo.organizational_mining.sna import util # wahrscheinlich nicht gut
@@ -895,6 +900,6 @@ def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
 
 cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
 
-# cluster_similar_act(log_iacs_sna, similar_activities_iacs_sna)''' 
+# cluster_similar_act(filtered_log_iacs, similar_activities_iacs)''' 
 
 
