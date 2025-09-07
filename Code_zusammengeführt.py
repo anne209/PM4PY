@@ -500,9 +500,9 @@ def tbr_throughput(log, net, initial_marking, final_marking):
 
     df_tbr = tbr_list_to_dataframe(replayed_traces)
     print(f'Head des Token Based Replay mit Throughput Analysis: \n{df_tbr.head(10)}')
-    print(place_fitness)
-    print(trans_fitness)
-    print(unwanted_activities)
+    print(f'Place Fitness {place_fitness}')
+    print(f'Trans Fitness {trans_fitness}')
+    print(f'Unwanted Activities {unwanted_activities}')
 
     return replayed_traces, place_fitness, trans_fitness, unwanted_activities
 
@@ -517,7 +517,7 @@ replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_act
 def througput_trans(log, trans_fitness):
     trans_diagnostics = duration_diagnostics.diagnose_from_trans_fitness(log, trans_fitness)
     for trans in trans_diagnostics:
-        print(trans, trans_diagnostics[trans])
+        print(f'Throughput Analysis der falsch ausgeführten Transitionen{trans, trans_diagnostics[trans]}')
 
 
 througput_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
