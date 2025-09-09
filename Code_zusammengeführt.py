@@ -222,24 +222,25 @@ dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 # Filteralgorithmus
 def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit = None, delete_activities = None, check_value_activities=None, col_filter=None):
-    selected_start_acts = set()
+    selected_activities = set()
     selected_end_acts = set()
     filtered_log = log
 
     for activity, count in start_acts.items(): # Iteration im Dict über den Namen der Startaktivität und ihre Häufigkeit.
         if count / no_of_cases >= min_ratio: # Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamtfällen werden berücksichtigt.
-            selected_start_acts.add(activity) # Sammeln der Aktivitäten in einer Liste
+            selected_activities.add(activity) # Sammeln der Aktivitäten in einer Liste
     
-    selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
+    if end_crit is not None:
+        selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
     
     if check_value_activities is not None:
 
-        drop_mask = pd.Series(False, index=filtered_log.index) # Erstellen einer Serie mit Boolean-Werte
+        drop_mask = pd.Series(False, index=filtered_log.index) # Erstellen einer Maske mit Boolean-Werte
 
         for item in check_value_activities: # Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
-            is_activity = filtered_log['concept:name'] == item # True, wenn die Aktivität ausgeführt wur de
+            is_activity = filtered_log['concept:name'] == item # True, wenn die Aktivität ausgeführt wrude
             is_empty = filtered_log[item].isna() # True, wenn kein Laborwert eingetragen wurde
             condition = is_activity & is_empty # True, nur wenn beide True sind
     
@@ -253,7 +254,7 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     if col_filter is not None:
         filtered_log.drop(col_filter, axis=1, inplace=True)# Alle Spalten mit Namen in spalten_filter werden herausgefiltert
     
-    filtered_log = pm4py.filter_start_activities(filtered_log, selected_start_acts) # Filtern nach Startaktivitäten
+    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) # Filtern nach Startaktivitäten
     filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)# Filtern nach Endaktivitäten
 
     if delete_activities is not None:
@@ -278,7 +279,7 @@ get_cases_events(filtered_log_sepsis)
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
-criteria_end_iacs = ['begin editing', 'check', 'take original document', 'calculat protocol', 'restart editing']
+criteria_end_iacs = []
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 sum_up_log(filtered_log_iacs)
@@ -944,3 +945,44 @@ cluster_similar_act(handover_sepsis)
 # cluster_similar_act(handover_iacs)
 
 
+'''# Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der 1. Hypothese)
+def filter_by_start_activities(log, start_activities, starts_to_remove):
+    starts_to_keep = [act for act in start_activities.keys() if act not in starts_to_remove]
+    filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
+    return  filtered_log_start
+
+filtered_log_start_sepsis = filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
+sum_up_log(filtered_log_start_sepsis)
+get_cases_events(filtered_log_start_sepsis)
+
+
+# Funktionen aufrufen für gefiltertes Event Log Sepsis
+heur_net_sepsis_start, initial_marking_heur_sepsis_start, final_marking_heur_sepsis_start = run_heuristic_miner(filtered_log_start_sepsis) # Warnung irgendwo in diesem Block
+
+ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start = run_inductive_miner(filtered_log_start_sepsis)
+
+mean_throuhput_start_sepsis = get_mean_throughput(filtered_log_start_sepsis)
+
+get_performance_dfg(filtered_log_start_sepsis)
+
+get_performance_net(filtered_log_start_sepsis, ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start)
+
+plot_start_activities(filtered_log_start_sepsis)
+
+plot_end_activities(filtered_log_start_sepsis)
+
+plot_activity_frequencies(filtered_log_start_sepsis)
+
+plot_case_duration_hist(filtered_log_start_sepsis)
+
+log_diagnostics_sepsis_start = pm4py.convert_to_event_log(filtered_log_start_sepsis)
+
+replayed_traces_sepsis_start, place_fitness_sepsis_start, trans_fitness_sepsis_start, unwanted_activities_sepsis_start = tbr_throughput(log_diagnostics_sepsis_start, ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start)
+
+througput_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
+
+throughput_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)
+
+rca_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
+
+rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)'''
