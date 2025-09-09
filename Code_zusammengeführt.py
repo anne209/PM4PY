@@ -286,10 +286,55 @@ sum_up_log(filtered_log_iacs)
 get_cases_events(filtered_log_iacs)
 
 
+
+
 # DFG aus gefiltertem Log erstellen
 dfg_sepsis_filtered = create_dfg_from_log(filtered_log_sepsis)
 
 dfg_iacs_filtered = create_dfg_from_log(filtered_log_iacs)
+
+
+
+
+# Umwandeln in Dataframe und Datetime, falls erforderlich
+def ensure_df(obj) -> pd.DataFrame:
+    if isinstance(obj, pd.DataFrame):
+        return obj.copy()
+    return pm4py.convert_to_dataframe(obj)
+
+
+def parse_ts(series: pd.Series) -> pd.Series:
+    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
+
+
+# Spaltenweises Zählen der Werte
+def get_column_count(log, columns: list): # Übergabe muss eine Liste sein
+    df = ensure_df(log) # Umwandeln in Data Frame, sofern erforderlich
+    
+    for col in columns: # Durchzählen und Ausgabe für alle übergebenen Spalten
+        if col in df.columns:
+            value_counts = df[col].value_counts()
+            print(f'\nAnzahlen für Spalte {value_counts}')
+        else:
+            print(f'\nSpalte {col} existiert nicht')
+
+
+get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', # org:group ist nicht binär, zählt aber korrekt durch
+                                       'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'DiagnosticIC', 'DiagnosticOther', 'SIRSCriteria2OrMore', 
+                                       'DiagnosticXthorax', 'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos', 'Oligurie', 'DiagnosticLacticAcid',
+                                       'Diagnose', 'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG']) # Diagnose zu lang für Darstellung
+
+'''get_column_count(filtered_log_iacs, ['success', 'org:resource', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random', # org:resource zu lang
+                                     'case:penalty_AJLP', 'case:penalty_BGKV', 'case:penalty_AUVP', 'case:risk_factor', 'case:small farmer', # Spalten noch anpassen (dazu/weg)
+                                     'case:penalty_BGP', 'case:department', 'case:penalty_C16', 'case:penalty_BGK', 'case:penalty_AVUVP',
+                                     'case:penalty_CC', 'case:penalty_AVJLP', 'case:penalty_C9', 'case:cross_compliance', 'case:rejected',
+                                     'case:greening', 'case:penalty_C4', 'case:penalty_AVGP', 'case:penalty_ABP', 'case:penalty_B6', 'case:penalty_B4',
+                                     'case:penalty_B5', 'case:penalty_AVBP', 'case:penalty_B2', 'case:selected_risk', 'case:penalty_B3',
+                                     'case:selected_manually', 'case:penalty_AGP', 'case:penalty_B16', 'case:penalty_GP1', 'case:basic payment',
+                                     'case:penalty_B5F', 'case:penalty_V5', 'case:redistribution', 'case:penalty_JLP6', 'case:penalty_JLP7', 'case:year',
+                                     'case:penalty_JLP5', 'case:penalty_JLP2', 'case:penalty_JLP3', 'case:number_parcels', 'case:penalty_JLP1'])'''
+
+
 
 
 # Alpha Miner anwenden
@@ -298,9 +343,9 @@ def run_alpha_miner(log):
     pm4py.view_petri_net(net, initial_marking, final_marking)
     return net, initial_marking, final_marking # Kann evtl. weg
 
-net_sepsis, initial_marking_sepsis, final_marking_sepsis = run_alpha_miner(filtered_log_sepsis) # Variablen evtl. umbenennen (auch bei TBR)
+alpha_net_sepsis, initial_marking_alpha_sepsis, final_marking_alpha_sepsis = run_alpha_miner(filtered_log_sepsis)
 
-alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
+# alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = run_alpha_miner(filtered_log_iacs)
 
 # Heuristic Miner anwenden und in Petri-Netz umwandeln
 def run_heuristic_miner(log, dependency_threshold=0.99):
@@ -364,17 +409,6 @@ def get_temporal_profile(log):
 get_temporal_profile(filtered_log_sepsis)
 
 # get_temporal_profile(filtered_log_iacs)
-
-# Umwandeln in Dataframe und Datetime, falls erforderlich
-def ensure_df(obj) -> pd.DataFrame:
-    if isinstance(obj, pd.DataFrame):
-        return obj.copy()
-    return pm4py.convert_to_dataframe(obj)
-
-
-def parse_ts(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
-
 
 # Mittlere Durchlaufzeit pro Fall berechnen
 def get_mean_throughput(log):
@@ -844,11 +878,11 @@ log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resour
 def get_handover_of_work(log):
     handover_values = pm4py.discover_handover_of_work_network(log)
     pm4py.view_sna(handover_values)
+    return handover_values
 
+handover_sepsis = get_handover_of_work(log_sepsis_sna)
 
-get_handover_of_work(log_sepsis_sna)
-
-# get_handover_of_work(filtered_log_iacs)
+# handover_iacs = get_handover_of_work(filtered_log_iacs)
 
 # Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
 def get_subcontracting(log):
@@ -874,7 +908,6 @@ get_working_together(log_sepsis_sna)
 def get_similar_activities(log):
     similar_act = pm4py.discover_activity_based_resource_similarity(log) # Benennung Var. wg Cluster-A.
     pm4py.view_sna(similar_act)
-    return similar_act
 
 
 similar_activities_sepsis = get_similar_activities(log_sepsis_sna)
@@ -892,14 +925,23 @@ get_orga_roles(log_sepsis_sna)
 # get_orga_roles(filtered_log_iacs)
 
 # Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
-'''from pm4py.algo.organizational_mining.sna import util # wahrscheinlich nicht gut
+from pm4py.algo.organizational_mining.sna import util
+import matplotlib.pyplot as plt
 
-def cluster_similar_act(log, sim_act): # Evtl. noch nach anderen Sachen clustern
-    clustering = util.cluster_affinity_propagation(sim_act)
+def cluster_similar_act(handover): # Evtl. noch nach anderen Sachen clustern
+    clustering = util.cluster_affinity_propagation(handover)
+    print(f'Cluster nach Übergabe von Arbeit: {clustering}')
+    
+    colours = ['green', 'yellow', 'orange', 'red', 'blue', 'purple', 'brown']
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
 
+    for colour, (x, ys) in zip(colours, clustering.items()):
+        ax.scatter([x] * len(ys), ys, c=colour, linewidth=0, s=50)
+    plt.show() # aktuell nicht geordnet
 
-cluster_similar_act(log_sepsis_sna, similar_activities_sepsis_sna)
+cluster_similar_act(handover_sepsis)
 
-# cluster_similar_act(filtered_log_iacs, similar_activities_iacs)''' 
+# cluster_similar_act(handover_iacs)
 
 
