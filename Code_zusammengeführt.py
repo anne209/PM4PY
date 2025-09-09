@@ -222,25 +222,24 @@ dfg_iacs_unfiltered = create_dfg_from_log(log_iacs)
 
 # Filteralgorithmus
 def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit = None, delete_activities = None, check_value_activities=None, col_filter=None):
-    selected_activities = set()
+    selected_start_acts = set()
     selected_end_acts = set()
     filtered_log = log
 
     for activity, count in start_acts.items(): # Iteration im Dict über den Namen der Startaktivität und ihre Häufigkeit.
         if count / no_of_cases >= min_ratio: # Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamtfällen werden berücksichtigt.
-            selected_activities.add(activity) # Sammeln der Aktivitäten in einer Liste
+            selected_start_acts.add(activity) # Sammeln der Aktivitäten in einer Liste
     
-    if end_crit is not None:
-        selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
+    selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
     
     if check_value_activities is not None:
 
-        drop_mask = pd.Series(False, index=filtered_log.index) # Erstellen einer Maske mit Boolean-Werte
+        drop_mask = pd.Series(False, index=filtered_log.index) # Erstellen einer Serie mit Boolean-Werte
 
         for item in check_value_activities: # Sepsisspezifisch!! Es wird überprüft, ob die Laborwerte tatsächlich vorhanden sind, oder ob nur die Aktivität ohne Laborwert ausgeführt wurde
 
-            is_activity = filtered_log['concept:name'] == item # True, wenn die Aktivität ausgeführt wrude
+            is_activity = filtered_log['concept:name'] == item # True, wenn die Aktivität ausgeführt wur de
             is_empty = filtered_log[item].isna() # True, wenn kein Laborwert eingetragen wurde
             condition = is_activity & is_empty # True, nur wenn beide True sind
     
@@ -254,7 +253,7 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     if col_filter is not None:
         filtered_log.drop(col_filter, axis=1, inplace=True)# Alle Spalten mit Namen in spalten_filter werden herausgefiltert
     
-    filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) # Filtern nach Startaktivitäten
+    filtered_log = pm4py.filter_start_activities(filtered_log, selected_start_acts) # Filtern nach Startaktivitäten
     filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)# Filtern nach Endaktivitäten
 
     if delete_activities is not None:
@@ -279,7 +278,7 @@ get_cases_events(filtered_log_sepsis)
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
-criteria_end_iacs = []
+criteria_end_iacs = ['begin editing', 'check', 'take original document', 'calculat protocol', 'restart editing']
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 sum_up_log(filtered_log_iacs)
