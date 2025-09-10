@@ -27,7 +27,7 @@ import Funktionen_Projekt as fkp
 
 
 # Import des Sepsis-Datensatzes
-log_sepsis = fkp.import_xes('sepsis_case.xes')
+log_sepsis = fkp.import_xes('D:/Users/domin/Desktop/Projekt PM&Py/Datensätze/Sepsis/Sepsis Cases - Event Log.xes')
 log_sepsis.to_csv('log_sepsis.csv', index=False)
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
@@ -133,13 +133,13 @@ fkp.plot_move_type_bars(df_stats_sepsis)
 fitness_tbr_sepsis = fkp.get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 fitness_align_sepsis = fkp.get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# Precision zwischen Log und Modell berechnen (TBR und Alignments)
+# Precision zwischen Log und Modell berechnen (TBR und Alignments(dauert sehr lange))
 precision_tbr_sepsis = fkp.get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-precision_align_sepsis = fkp.get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+# precision_align_sepsis = fkp.get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
 # F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
 f1_score_tbr_sepsis = fkp.get_f1_score(fitness_tbr_sepsis, precision_tbr_sepsis)
-f1_score_align_sepsis = fkp.get_f1_score(fitness_align_sepsis, precision_align_sepsis)
+# f1_score_align_sepsis = fkp.get_f1_score(fitness_align_sepsis, precision_align_sepsis)
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
 fkp.get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
@@ -224,7 +224,7 @@ fkp.rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)'''
 
 
 # Import des IACS-Datensatzes
-log_iacs = fkp.import_xes('BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht hochgeladen
+log_iacs = fkp.import_xes('D:/Users/domin/Desktop/Projekt PM&Py/Datensätze/IACS/BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht hochgeladen
 log_iacs.to_csv('log_iacs.csv', index=False)
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
@@ -275,7 +275,7 @@ heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.ru
 ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = fkp.run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
 
 # Varianten auflisten
-fkp.show_filter_vars(filtered_log_iacs)
+fkp.show_filter_variants(filtered_log_iacs)
 
 # Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
 for i in [1, 5]:
@@ -342,8 +342,8 @@ f1_score_tbr_iacs = fkp.get_f1_score(fitness_tbr_iacs, precision_tbr_iacs)
 # f1_score_align_iacs = fkp.get_f1_score(fitness_align_iacs, precision_align_iacs)
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
-fkp.get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-fkp.get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fkp.get_generalization(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+fkp.get_simplicity(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Erstellen eines Histogramms der Startaktivitäten
 fkp.plot_start_activities(filtered_log_iacs)
@@ -376,4 +376,4 @@ similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
 fkp.get_orga_roles(filtered_log_iacs)
 
 # Cluster-Analyse nach Übergabe von Arbeit
-fkp.cluster_similar_act(handover_iacs)
+# fkp.cluster_similar_act(handover_iacs) # kein sinnvoller Output
