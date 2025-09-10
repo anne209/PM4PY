@@ -1,3 +1,4 @@
+# Libraries importieren
 import pm4py
 import pandas as pd
 import numpy as np
@@ -21,10 +22,358 @@ from pm4py.statistics.traces.generic.log import case_statistics
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
 import Funktionen_Projekt as fkp
 
-# Import des Datensatzes
+
+# BEGINN DES SEPSIS-DATENSATZES --------------------------------------------
+
+
+# Import des Sepsis-Datensatzes
 log_sepsis = fkp.import_xes('sepsis_case.xes')
 log_sepsis.to_csv('log_sepsis.csv', index=False)
 
+# Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
 fkp.sum_up_log(log_sepsis)
 
+# Anzahl der Fälle und Ereignisse anzeigen
 cases_no_sepsis = fkp.get_cases_events(log_sepsis)
+
+# Start- und Endaktivitäten anzeigen
+start_act_sepsis, end_act_sepsis = fkp.get_start_end_act(log_sepsis)
+
+# DFG aus ungefiltertem Log erstellen
+dfg_sepsis_unfiltered = fkp.create_dfg_from_log(log_sepsis)
+
+# Filterkriterien definieren
+criteria_end_sepsis = ['IV Antibiotics', 'ER Sepsis Triage', 'Leucocytes', 'IV Liquid', 'CRP', 'LacticAcid', 'Admission NC', 'ER Triage'] # Endaktivitäten, die herausgefiltert werden sollen
+deleted_activities_sepsis = ['Return ER'] # Aktivitäten die generell gelöscht werden sollen im Log
+activity_check_sepsis = ['Leucocytes', 'LacticAcid', 'CRP'] # Aktivitäten die auf ihre Vollständigkeit im Log überprüft werden sollen
+column_filter_sepsis = ['lifecycle:transition'] # alle complete
+
+filtered_log_sepsis = fkp.filter_log(start_act_sepsis, end_act_sepsis, log_sepsis, cases_no_sepsis, end_crit = criteria_end_sepsis, 
+                                 delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
+                                 col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
+
+# Beschreibung des gefilterten Logs
+fkp.sum_up_log(filtered_log_sepsis)
+fkp.get_cases_events(filtered_log_sepsis) # Start- und Endaktivitäten hier noch einmal anzeigen?
+
+# DFG aus gefiltertem Log erstellen
+dfg_sepsis_filtered = fkp.create_dfg_from_log(filtered_log_sepsis)
+
+# Spaltenweises Zählen der Werte
+fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', # org:group ist nicht binär, zählt aber korrekt durch
+                                       'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'DiagnosticIC', 'DiagnosticOther', 'SIRSCriteria2OrMore', 
+                                       'DiagnosticXthorax', 'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos', 'Oligurie', 'DiagnosticLacticAcid',
+                                       'Diagnose', 'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG']) # Diagnose zu lang für Darstellung
+
+# Alpha Miner anwenden
+alpha_net_sepsis, initial_marking_alpha_sepsis, final_marking_alpha_sepsis = fkp.run_alpha_miner(filtered_log_sepsis)
+
+# Heuristic Miner anwenden und in Petri-Netz umwandeln
+heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis = fkp.run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.0)
+
+# Inductive Miner anwenden
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = fkp.run_inductive_miner(filtered_log_sepsis, noise_threshold=0.0)
+
+# Varianten auflisten
+fkp.show_filter_variants(filtered_log_sepsis)
+
+# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
+for i in [1, 5]:
+    filtered_log_var_sepsis = fkp.filter_by_variants(filtered_log_sepsis, i)
+    fkp.run_inductive_miner(filtered_log_var_sepsis)
+    fkp.create_dfg_from_log(filtered_log_var_sepsis)
+
+# Mittlere Durchlaufzeit pro Fall berechnen
+mean_throughput_sepsis = fkp.get_mean_throughput(filtered_log_sepsis)
+
+# Performance-DFG erzeugen
+fkp.get_performance_dfg(filtered_log_sepsis)
+
+# Performance-Informationen zu Netz aus Inductive Miner hinzufügen
+fkp.get_performance_net(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Process Tree Inductive
+fkp.get_process_tree_ind(filtered_log_sepsis)
+
+# Temporal Profile erstellen
+fkp.get_temporal_profile(filtered_log_sepsis)
+
+# TBR mit Modell aus Inductive Miner
+df_tbr_sepsis = fkp.tbr_ind(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
+fkp.plot_tbr_fitness_hist(df_tbr_sepsis)
+fkp.plot_tbr_fit_flag(df_tbr_sepsis)
+
+# Throughput Analysis: TBR mit angepassten Einstellungen
+log_diagnostics_sepsis = pm4py.convert_to_event_log(filtered_log_sepsis)
+replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_activities_sepsis = fkp.tbr_throughput(log_diagnostics_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+fkp.througput_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
+
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+fkp.throughput_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
+
+# Root Cause Analysis der falsch ausgeführten Transitionen
+fkp.rca_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
+
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+fkp.rca_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
+
+# Alignments bestimmen mit Modell aus Inductive Miner
+aligned_traces_ind_sepsis = fkp.alignments_inductive(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Visualisierung der Alignments (Histogramm der Alignment-Kosten und Move-Typen)
+df_stats_sepsis = fkp.extract_alignment_stats(aligned_traces_ind_sepsis)
+fkp.plot_alignment_cost_hist(df_stats_sepsis)
+fkp.plot_move_type_bars(df_stats_sepsis)
+
+# Fitness zwischen Log und Modell berechnen (TBR und Alignments)
+fitness_tbr_sepsis = fkp.get_replay_fitness_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fitness_align_sepsis = fkp.get_replay_fitness_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Precision zwischen Log und Modell berechnen (TBR und Alignments)
+precision_tbr_sepsis = fkp.get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+precision_align_sepsis = fkp.get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
+f1_score_tbr_sepsis = fkp.get_f1_score(fitness_tbr_sepsis, precision_tbr_sepsis)
+f1_score_align_sepsis = fkp.get_f1_score(fitness_align_sepsis, precision_align_sepsis)
+
+# Generalization und Simplicity zwischen Log und Modell berechnen
+fkp.get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fkp.get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Erstellen eines Histogramms der Startaktivitäten
+fkp.plot_start_activities(filtered_log_sepsis)
+
+# Erstellen eines Histogramms der Endaktivitäten
+fkp.plot_end_activities(filtered_log_sepsis)
+
+# Erstellen eines Diagramms der Aktivitätshäufigkeiten
+fkp.plot_activity_frequencies(filtered_log_sepsis)
+
+# Erstellen eines Histogramms der Durchlaufzeiten der Cases
+fkp.plot_case_duration_hist(filtered_log_sepsis)
+
+# Erstellen eines Diagramms der Events pro Tag
+fkp.plot_events_per_day(filtered_log_sepsis)
+
+# Spalte bei Sepsis-Datensatz umbenennen für Social Network Analysis
+log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
+
+# Übergabe von Arbeit ermitteln und anzeigen
+handover_sepsis = fkp.get_handover_of_work(log_sepsis_sna)
+
+# Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
+fkp.get_subcontracting(log_sepsis_sna)
+
+# Ermitteln und Anzeigen, wie oft zusammengearbeitet wird
+fkp.get_working_together(log_sepsis_sna)
+
+# Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
+fkp.get_similar_activities(log_sepsis_sna)
+
+# Orginisationale Rollen entdecken und ausgeben
+fkp.get_orga_roles(log_sepsis_sna)
+
+# Cluster-Analyse nach Übergabe von Arbeit
+fkp.cluster_similar_act(handover_sepsis)
+
+# Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der 1. Hypothese)
+filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
+fkp.sum_up_log(filtered_log_start_sepsis)
+fkp.get_cases_events(filtered_log_start_sepsis)
+
+
+'''# Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
+heur_net_sepsis_start, initial_marking_heur_sepsis_start, final_marking_heur_sepsis_start = fkp.run_heuristic_miner(filtered_log_start_sepsis)
+
+ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start = fkp.run_inductive_miner(filtered_log_start_sepsis)
+
+mean_throuhput_start_sepsis = fkp.get_mean_throughput(filtered_log_start_sepsis)
+
+fkp.get_performance_dfg(filtered_log_start_sepsis)
+
+fkp.get_performance_net(filtered_log_start_sepsis, ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start)
+
+fkp.plot_start_activities(filtered_log_start_sepsis)
+
+fkp.plot_end_activities(filtered_log_start_sepsis)
+
+fkp.plot_activity_frequencies(filtered_log_start_sepsis)
+
+fkp.plot_case_duration_hist(filtered_log_start_sepsis)
+
+log_diagnostics_sepsis_start = pm4py.convert_to_event_log(filtered_log_start_sepsis)
+
+replayed_traces_sepsis_start, place_fitness_sepsis_start, trans_fitness_sepsis_start, unwanted_activities_sepsis_start = fkp.tbr_throughput(log_diagnostics_sepsis_start, ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start)
+
+fkp.througput_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
+
+fkp.throughput_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)
+
+fkp.rca_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
+
+fkp.rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)'''
+
+
+
+# BEGINN DES IACS-DATENSATZES ---------------------------------------------
+
+
+# Import des IACS-Datensatzes
+log_iacs = fkp.import_xes('BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht hochgeladen
+log_iacs.to_csv('log_iacs.csv', index=False)
+
+# Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
+fkp.sum_up_log(log_iacs)
+
+# Anzahl der Fälle und Ereignisse anzeigen
+cases_no_iacs = fkp.get_cases_events(log_iacs)
+
+# Start- und Endaktivitäten anzeigen
+start_act_iacs, end_act_iacs = fkp.get_start_end_act(log_iacs)
+
+# DFG aus ungefiltertem Log erstellen
+dfg_iacs_unfiltered = fkp.create_dfg_from_log(log_iacs)
+
+# Filterkriterien definieren
+column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
+                      'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
+                      'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
+criteria_end_iacs = ['begin editing', 'check', 'take original document', 'calculate protocol', 'restart editing']
+
+filtered_log_iacs = fkp.filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
+
+# Beschreibung des gefilterten Logs
+fkp.sum_up_log(filtered_log_iacs)
+fkp.get_cases_events(filtered_log_iacs)
+
+# DFG aus gefiltertem Log erstellen
+dfg_iacs_filtered = fkp.create_dfg_from_log(filtered_log_iacs)
+
+# Spaltenweises Zählen der Werte
+fkp.get_column_count(filtered_log_iacs, ['success', 'org:resource', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random', # org:resource zu lang
+                                     'case:penalty_AJLP', 'case:penalty_BGKV', 'case:penalty_AUVP', 'case:risk_factor', 'case:small farmer', # Spalten noch anpassen (dazu/weg)
+                                     'case:penalty_BGP', 'case:department', 'case:penalty_C16', 'case:penalty_BGK', 'case:penalty_AVUVP',
+                                     'case:penalty_CC', 'case:penalty_AVJLP', 'case:penalty_C9', 'case:cross_compliance', 'case:rejected',
+                                     'case:greening', 'case:penalty_C4', 'case:penalty_AVGP', 'case:penalty_ABP', 'case:penalty_B6', 'case:penalty_B4',
+                                     'case:penalty_B5', 'case:penalty_AVBP', 'case:penalty_B2', 'case:selected_risk', 'case:penalty_B3',
+                                     'case:selected_manually', 'case:penalty_AGP', 'case:penalty_B16', 'case:penalty_GP1', 'case:basic payment',
+                                     'case:penalty_B5F', 'case:penalty_V5', 'case:redistribution', 'case:penalty_JLP6', 'case:penalty_JLP7', 'case:year',
+                                     'case:penalty_JLP5', 'case:penalty_JLP2', 'case:penalty_JLP3', 'case:number_parcels', 'case:penalty_JLP1'])
+
+# Alpha Miner anwenden
+alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = fkp.run_alpha_miner(filtered_log_iacs)
+
+# Heuristic Miner anwenden und in Petri-Netz umwandeln
+heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
+
+# Inductive Miner anwenden
+ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = fkp.run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
+
+# Varianten auflisten
+fkp.show_filter_vars(filtered_log_iacs)
+
+# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
+for i in [1, 5]:
+    filtered_log_var_iacs = fkp.filter_by_variants(filtered_log_iacs, i)
+    fkp.run_inductive_miner(filtered_log_var_iacs)
+    fkp.create_dfg_from_log(filtered_log_var_iacs)
+
+# Mittlere Durchlaufzeit pro Fall berechnen
+mean_throughput_iacs = fkp.get_mean_throughput(filtered_log_iacs)
+
+# Performance-DFG erzeugen
+fkp.get_performance_dfg(filtered_log_iacs)
+
+# Performance-Informationen zu Netz aus Inductive Miner hinzufügen
+fkp.get_performance_net(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Process Tree Inductive
+fkp.get_process_tree_ind(filtered_log_iacs)
+
+# Temporal Profile erstellen
+fkp.get_temporal_profile(filtered_log_iacs)
+
+# TBR mit Modell aus Inductive Miner
+df_tbr_iacs = fkp.tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
+fkp.plot_tbr_fitness_hist(df_tbr_iacs)
+fkp.plot_tbr_fit_flag(df_tbr_iacs)
+
+# Throughput Analysis: TBR mit angepassten Einstellungen
+log_diagnostics_iacs = pm4py.convert_to_event_log(filtered_log_iacs)
+replayed_traces_iacs, place_fitness_iacs, trans_fitness_iacs, unwanted_activities_iacs = fkp.tbr_throughput(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+fkp.througput_trans(filtered_log_iacs, trans_fitness_iacs)
+
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+fkp.throughput_act(filtered_log_iacs, unwanted_activities_iacs)
+
+# Root Cause Analysis der falsch ausgeführten Transitionen
+fkp.rca_trans(filtered_log_iacs, trans_fitness_iacs)
+
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+fkp.rca_act(filtered_log_iacs, unwanted_activities_iacs)
+
+# Alignments bestimmen mit Modell aus Inductive Miner (dauert zu lange mit vollständigem Datensatz)
+# aligned_traces_ind_iacs = fkp.alignments_inductive(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Visualisierung der Alignments (Histogramm der Alignment-Kosten und Move-Typen)
+# df_stats_iacs = fkp.extract_alignment_stats(aligned_traces_ind_iacs)
+# fkp.plot_alignment_cost_hist(df_stats_iacs)
+# fkp.plot_move_type_bars(df_stats_iacs)
+
+# Fitness zwischen Log und Modell berechnen (TBR und Alignments)
+fitness_tbr_iacs = fkp.get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# fitness_align_iacs = fkp.get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# Precision zwischen Log und Modell berechnen (TBR und Alignments)
+precision_tbr_iacs = fkp.get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+# precision_align_iacs = fkp.get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+
+# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
+f1_score_tbr_iacs = fkp.get_f1_score(fitness_tbr_iacs, precision_tbr_iacs)
+# f1_score_align_iacs = fkp.get_f1_score(fitness_align_iacs, precision_align_iacs)
+
+# Generalization und Simplicity zwischen Log und Modell berechnen
+fkp.get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fkp.get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+
+# Erstellen eines Histogramms der Startaktivitäten
+fkp.plot_start_activities(filtered_log_iacs)
+
+# Erstellen eines Histogramms der Endaktivitäten
+fkp.plot_end_activities(filtered_log_iacs)
+
+# Erstellen eines Diagramms der Aktivitätshäufigkeiten
+fkp.plot_activity_frequencies(filtered_log_iacs)
+
+# Erstellen eines Histogramms der Durchlaufzeiten der Cases
+fkp.plot_case_duration_hist(filtered_log_iacs)
+
+# Erstellen eines Diagramms der Events pro Tag
+fkp.plot_events_per_day(filtered_log_iacs)
+
+# Übergabe von Arbeit ermitteln und anzeigen
+handover_iacs = fkp.get_handover_of_work(filtered_log_iacs)
+
+# Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
+fkp.get_subcontracting(filtered_log_iacs)
+
+# Ermitteln und Anzeigen, wie oft zusammengearbeitet wird
+fkp.get_working_together(filtered_log_iacs)
+
+# Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
+similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
+
+# Orginisationale Rollen entdecken und ausgeben
+fkp.get_orga_roles(filtered_log_iacs)
+
+# Cluster-Analyse nach Übergabe von Arbeit
+fkp.cluster_similar_act(handover_iacs)
