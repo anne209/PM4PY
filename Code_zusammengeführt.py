@@ -279,7 +279,7 @@ get_cases_events(filtered_log_sepsis)
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
-criteria_end_iacs = []
+criteria_end_iacs = ['begin editing', 'check', 'take original document', 'calculat protocol', 'restart editing']
 
 filtered_log_iacs = filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 sum_up_log(filtered_log_iacs)
