@@ -31,7 +31,7 @@ def import_xes(path_to_xes: str):
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
 def sum_up_log (log):
     print(f'Beschreibung des Datensatzes: \n{log.describe()}')
-    print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}')
+    print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}') # Jeweils Ausgabe von 10 Zeilen
 
 # Anzahl der Cases und Events anzeigen
 def get_cases_events(log):
@@ -97,25 +97,26 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
 
     return filtered_log
 
-# Umwandeln in Dataframe und Datetime, falls erforderlich
+# Umwandeln in Dataframe, falls erforderlich
 def ensure_df(obj) -> pd.DataFrame:
     if isinstance(obj, pd.DataFrame):
         return obj.copy()
     return pm4py.convert_to_dataframe(obj) # Vor allem für Event Log zu Dataframe
 
+# Umwandeln von Zeitstempeln in Datetime, falls erforderlich
 def parse_ts(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
+    return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None) #
 
 # Spaltenweises Zählen der Häufigkeit der Werte
 def get_column_count(log, columns: list): # Übergabe muss eine Liste sein
-    df = ensure_df(log) # Umwandeln in Data Frame, sofern erforderlich
+    df = ensure_df(log)
     
     for col in columns: # Durchzählen und Ausgabe für alle übergebenen Spalten
         if col in df.columns:
             value_counts = df[col].value_counts()
             print(f'\nAnzahlen für Spalte {value_counts}')
         else:
-            print(f'\nSpalte {col} existiert nicht')
+            print(f'\nSpalte {col} existiert nicht') # Fehlermeldung bei nicht existierender Spalte
 
 # Erstellen eines Histogramms der Startaktivitäten
 def plot_start_activities(log):
@@ -167,8 +168,8 @@ def plot_case_duration_hist(obj, bins: int = 30):
     cid = 'case:concept:name'
     ts  = 'time:timestamp'
     df[ts] = parse_ts(df[ts])
-    ag = df.groupby(cid)[ts].agg(['min', 'max'])
-    dur_days = (ag['max'] - ag['min']).dt.total_seconds() / 86400.0
+    ag = df.groupby(cid)[ts].agg(['min', 'max']) # Gruppieren nach Case-ID/minimalem und maximalem Zeitstempel
+    dur_days = (ag['max'] - ag['min']).dt.total_seconds() / 86400.0 # Berechnung der Dauer in Tagen
     plt.figure()
     plt.hist(dur_days.dropna(), bins=bins)
     plt.xlabel('Case-Dauer [Tage]')
@@ -181,7 +182,7 @@ def plot_events_per_day(obj):
     df = ensure_df(obj)
     ts = 'time:timestamp'
     df[ts] = parse_ts(df[ts])
-    daily = df.set_index(ts).resample('D').size()
+    daily = df.set_index(ts).resample('D').size() # Series, enthält Anzahl der Events pro Tag
     plt.figure()
     daily.plot()
     plt.xlabel('Datum')
@@ -456,7 +457,7 @@ def get_simplicity(net):
 def get_handover_of_work(log):
     handover_values = pm4py.discover_handover_of_work_network(log)
     pm4py.view_sna(handover_values)
-    return handover_values
+    return handover_values # Ausgabe für die Cluster-Analyse nötig
 
 # Ermitteln und Anzeigen, wie oft Subcontracting vorkommt
 def get_subcontracting(log):
@@ -470,7 +471,7 @@ def get_working_together(log):
 
 # Ähnlichkeiten der Arbeitsmuster zwischen Individuen ermitteln und anzeigen
 def get_similar_activities(log):
-    similar_act = pm4py.discover_activity_based_resource_similarity(log) # Benennung Var. wg Cluster-A.
+    similar_act = pm4py.discover_activity_based_resource_similarity(log)
     pm4py.view_sna(similar_act)
 
 # Orginisationale Rollen entdecken und ausgeben
