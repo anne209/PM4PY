@@ -65,6 +65,21 @@ fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'D
                                        'DiagnosticXthorax', 'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos', 'Oligurie', 'DiagnosticLacticAcid',
                                        'Diagnose', 'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG']) # Diagnose zu lang für Darstellung
 
+# Erstellen eines Histogramms der Startaktivitäten
+fkp.plot_start_activities(filtered_log_sepsis)
+
+# Erstellen eines Histogramms der Endaktivitäten
+fkp.plot_end_activities(filtered_log_sepsis)
+
+# Erstellen eines Diagramms der Aktivitätshäufigkeiten
+fkp.plot_activity_frequencies(filtered_log_sepsis)
+
+# Erstellen eines Histogramms der Durchlaufzeiten der Cases
+fkp.plot_case_duration_hist(filtered_log_sepsis)
+
+# Erstellen eines Diagramms der Events pro Tag
+fkp.plot_events_per_day(filtered_log_sepsis)
+
 # Alpha Miner anwenden
 alpha_net_sepsis, initial_marking_alpha_sepsis, final_marking_alpha_sepsis = fkp.run_alpha_miner(filtered_log_sepsis)
 
@@ -94,9 +109,6 @@ fkp.get_performance_net(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind
 
 # Process Tree Inductive
 fkp.get_process_tree_ind(filtered_log_sepsis)
-
-# Temporal Profile erstellen
-fkp.get_temporal_profile(filtered_log_sepsis)
 
 # TBR mit Modell aus Inductive Miner
 df_tbr_sepsis = fkp.tbr_ind(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
@@ -135,30 +147,15 @@ fitness_align_sepsis = fkp.get_replay_fitness_align(filtered_log_sepsis, ind_net
 
 # Precision zwischen Log und Modell berechnen (TBR und Alignments(dauert sehr lange))
 precision_tbr_sepsis = fkp.get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-# precision_align_sepsis = fkp.get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+# precision_align_sepsis = fkp.get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis) # dauert zu lange
 
 # F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
 f1_score_tbr_sepsis = fkp.get_f1_score(fitness_tbr_sepsis, precision_tbr_sepsis)
-# f1_score_align_sepsis = fkp.get_f1_score(fitness_align_sepsis, precision_align_sepsis)
+# f1_score_align_sepsis = fkp.get_f1_score(fitness_align_sepsis, precision_align_sepsis) # nicht möglich (s.o.)
 
 # Generalization und Simplicity zwischen Log und Modell berechnen
 fkp.get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 fkp.get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-
-# Erstellen eines Histogramms der Startaktivitäten
-fkp.plot_start_activities(filtered_log_sepsis)
-
-# Erstellen eines Histogramms der Endaktivitäten
-fkp.plot_end_activities(filtered_log_sepsis)
-
-# Erstellen eines Diagramms der Aktivitätshäufigkeiten
-fkp.plot_activity_frequencies(filtered_log_sepsis)
-
-# Erstellen eines Histogramms der Durchlaufzeiten der Cases
-fkp.plot_case_duration_hist(filtered_log_sepsis)
-
-# Erstellen eines Diagramms der Events pro Tag
-fkp.plot_events_per_day(filtered_log_sepsis)
 
 # Spalte bei Sepsis-Datensatz umbenennen für Social Network Analysis
 log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
@@ -179,7 +176,7 @@ fkp.get_similar_activities(log_sepsis_sna)
 fkp.get_orga_roles(log_sepsis_sna)
 
 # Cluster-Analyse nach Übergabe von Arbeit
-fkp.cluster_similar_act(handover_sepsis)
+fkp.cluster_handover(handover_sepsis)
 
 # Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der 1. Hypothese)
 filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
@@ -243,7 +240,9 @@ dfg_iacs_unfiltered = fkp.create_dfg_from_log(log_iacs)
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
-criteria_end_iacs = ['begin editing', 'check', 'take original document', 'calculate protocol', 'restart editing']
+criteria_end_iacs = ['remove document', 'begin editing', 'refuse', 'decide', 'calculate', 'insert document', 'withdraw', 
+                     'change department', 'check admissibiliy', 'check', 'prepare offline', 'initialize', 'finish pre-check', 
+                     'take original document', 'calculate protocol', 'restart editing', 'abort payment', 'begin admissibility check']
 
 filtered_log_iacs = fkp.filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 
@@ -264,6 +263,21 @@ fkp.get_column_count(filtered_log_iacs, ['success', 'org:resource', 'doctype', '
                                      'case:selected_manually', 'case:penalty_AGP', 'case:penalty_B16', 'case:penalty_GP1', 'case:basic payment',
                                      'case:penalty_B5F', 'case:penalty_V5', 'case:redistribution', 'case:penalty_JLP6', 'case:penalty_JLP7', 'case:year',
                                      'case:penalty_JLP5', 'case:penalty_JLP2', 'case:penalty_JLP3', 'case:number_parcels', 'case:penalty_JLP1'])
+
+# Erstellen eines Histogramms der Startaktivitäten
+fkp.plot_start_activities(filtered_log_iacs)
+
+# Erstellen eines Histogramms der Endaktivitäten
+fkp.plot_end_activities(filtered_log_iacs)
+
+# Erstellen eines Diagramms der Aktivitätshäufigkeiten
+fkp.plot_activity_frequencies(filtered_log_iacs)
+
+# Erstellen eines Histogramms der Durchlaufzeiten der Cases
+fkp.plot_case_duration_hist(filtered_log_iacs)
+
+# Erstellen eines Diagramms der Events pro Tag
+fkp.plot_events_per_day(filtered_log_iacs)
 
 # Alpha Miner anwenden
 alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = fkp.run_alpha_miner(filtered_log_iacs)
@@ -345,21 +359,6 @@ f1_score_tbr_iacs = fkp.get_f1_score(fitness_tbr_iacs, precision_tbr_iacs)
 fkp.get_generalization(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 fkp.get_simplicity(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# Erstellen eines Histogramms der Startaktivitäten
-fkp.plot_start_activities(filtered_log_iacs)
-
-# Erstellen eines Histogramms der Endaktivitäten
-fkp.plot_end_activities(filtered_log_iacs)
-
-# Erstellen eines Diagramms der Aktivitätshäufigkeiten
-fkp.plot_activity_frequencies(filtered_log_iacs)
-
-# Erstellen eines Histogramms der Durchlaufzeiten der Cases
-fkp.plot_case_duration_hist(filtered_log_iacs)
-
-# Erstellen eines Diagramms der Events pro Tag
-fkp.plot_events_per_day(filtered_log_iacs)
-
 # Übergabe von Arbeit ermitteln und anzeigen
 handover_iacs = fkp.get_handover_of_work(filtered_log_iacs)
 
@@ -376,4 +375,4 @@ similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
 fkp.get_orga_roles(filtered_log_iacs)
 
 # Cluster-Analyse nach Übergabe von Arbeit
-# fkp.cluster_similar_act(handover_iacs) # kein sinnvoller Output
+# fkp.cluster_handover(handover_iacs) # kein sinnvoller Output
