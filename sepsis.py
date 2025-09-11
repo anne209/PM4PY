@@ -120,7 +120,7 @@ fkp.plot_tbr_fit_flag(df_tbr_sepsis)
 
 # TBR mit angepassten Einstellungen zur Vorbereitung der Throughput Analysis durchführen
 log_diagnostics_sepsis = pm4py.convert_to_event_log(filtered_log_sepsis)
-replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_activities_sepsis = fkp.tbr_throughput(log_diagnostics_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_activities_sepsis = fkp.tbr_throughput(log_diagnostics_sepsis, heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis)
 
 # Throughput Analysis der falsch ausgeführten Transitionen durchführen und diese ausgeben
 fkp.througput_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
@@ -323,7 +323,7 @@ fkp.plot_tbr_fit_flag(df_tbr_iacs)
 
 # TBR mit angepassten Einstellungen zur Vorbereitung der Throughput Analysis durchführen
 log_diagnostics_iacs = pm4py.convert_to_event_log(filtered_log_iacs)
-replayed_traces_iacs, place_fitness_iacs, trans_fitness_iacs, unwanted_activities_iacs = fkp.tbr_throughput(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+replayed_traces_iacs, place_fitness_iacs, trans_fitness_iacs, unwanted_activities_iacs = fkp.tbr_throughput(filtered_log_iacs, heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs)
 
 # Throughput Analysis der falsch ausgeführten Transitionen durchführen und diese ausgeben
 fkp.througput_trans(filtered_log_iacs, trans_fitness_iacs)
