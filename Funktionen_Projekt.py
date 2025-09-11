@@ -204,9 +204,15 @@ def run_heuristic_miner(log, dependency_threshold=0.99):
     heuristic_to_petri = pm4py.objects.conversion.heuristics_net.variants.to_petri_net.apply(heuristic_net, parameters=None) # Umwandeln in Petri-Netz
     return heuristic_to_petri
 
-# Inductive Miner anwenden, Modell erstellen und anzeigen
-def run_inductive_miner(log, noise_threshold=0.0):
-    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log, noise_threshold)
+# Inductive Miner für Sepsis-Datensatz anwenden, Modell erstellen und anzeigen
+def run_inductive_miner_sepsis(log): # Programm funktionert nicht bei Übergabe von noise_threshold, daher getrennte Funktion
+    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log, noise_threshold=0.1)
+    pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
+    return inductive_net, initial_marking_inductive, final_marking_inductive
+
+# Inductive Miner für IACS-Datensatz anwenden, Modell erstellen und anzeigen
+def run_inductive_miner_iacs(log):
+    inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log, noise_threshold=0.5)
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
     return inductive_net, initial_marking_inductive, final_marking_inductive
 
