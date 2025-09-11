@@ -9,7 +9,7 @@ import csv
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
-from pm4py.visualization.petri_net import visualizer as pn_visualizer # für Zusatzinfos Performance
+from pm4py.visualization.petri_net import visualizer as pn_visualizer # Für Zusatzinfos Performance
 from pm4py.algo.conformance.tokenreplay import algorithm as token_based_replay
 from pm4py.algo.conformance.tokenreplay.diagnostics import duration_diagnostics
 from pm4py.algo.conformance.tokenreplay.diagnostics import root_cause_analysis
@@ -151,9 +151,9 @@ def plot_end_activities(log):
 # Erstellen eines Diagramms der Aktivitätshäufigkeiten
 def plot_activity_frequencies(obj):
     df = ensure_df(obj)
-    counts = df['concept:name'].value_counts()
-    labels = counts.index.tolist()
-    values = counts.values.tolist()
+    counts = df['concept:name'].value_counts() # Durchzählen der Aktivitäten, Series
+    labels = counts.index.tolist() # Indizes in Liste umwandeln
+    values = counts.values.tolist() # Werte in Liste umwandeln
     plt.figure()
     plt.bar(range(len(values)), values)
     plt.xticks(range(len(labels)), labels, rotation=45, ha='right')
@@ -195,13 +195,13 @@ def plot_events_per_day(obj):
 def run_alpha_miner(log):
     net, initial_marking, final_marking = pm4py.discover_petri_net_alpha(log)
     pm4py.view_petri_net(net, initial_marking, final_marking)
-    return net, initial_marking, final_marking # Kann evtl. weg
+    return net, initial_marking, final_marking
 
 # Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
 def run_heuristic_miner(log, dependency_threshold=0.99):
     heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold)
     pm4py.view_heuristics_net(heuristic_net)
-    heuristic_to_petri = pm4py.objects.conversion.heuristics_net.variants.to_petri_net.apply(heuristic_net, parameters=None)
+    heuristic_to_petri = pm4py.objects.conversion.heuristics_net.variants.to_petri_net.apply(heuristic_net, parameters=None) # Umwandeln in Petri-Netz
     return heuristic_to_petri
 
 # Inductive Miner anwenden, Modell erstellen und anzeigen
@@ -258,7 +258,7 @@ def get_process_tree_ind(log):
 # Helfer TBR erstellen
 def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variablen)namen für TBR ändern
     rows = []
-    for i, d in enumerate(replayed_traces):
+    for i, d in enumerate(replayed_traces): # Erstellen eines Dict mit Trace-Index, Fitness und Anzahlen der Tokens 
         row = {
             'trace_index': i,
             'trace_is_fit': d.get('trace_is_fit', None),
@@ -267,13 +267,13 @@ def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variab
             'missing_tokens': d.get('missing_tokens', 0),
             'consumed_tokens': d.get('consumed_tokens', 0)
         }
-        p = row['produced_tokens']
+        p = row['produced_tokens'] # Auslesen der Anzahlen aus dem Dict
         r = row['remaining_tokens']
         m = row['missing_tokens']
         c = row['consumed_tokens']
         term1 = (1 - (r / p)) if p else 0.0
         term2 = (1 - (m / c)) if c else 0.0
-        row['tbr_fitness'] = 0.5 * term1 + 0.5 * term2
+        row['tbr_fitness'] = 0.5 * term1 + 0.5 * term2 # Trace-Fitness anhand der Formel berechnen
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -294,9 +294,9 @@ def plot_tbr_fitness_hist(df_tbr: pd.DataFrame, bins: int = 20):
     plt.show()
 
 def plot_tbr_fit_flag(df_tbr: pd.DataFrame):
-    counts = df_tbr['trace_is_fit'].value_counts(dropna=False)
-    labels = [str(k) for k in counts.index]
-    values = counts.values
+    counts = df_tbr['trace_is_fit'].value_counts(dropna=False) # Traces, die fit/unfit sind, zählen
+    labels = [str(k) for k in counts.index] # List der Indizes als Strings
+    values = counts.values # Liste der Werte erstellen
     plt.figure()
     plt.bar(range(len(values)), values)
     plt.xticks(range(len(labels)), labels)
@@ -365,33 +365,32 @@ def rca_act(log, unwanted_activities):
 # Alignments bestimmen und ausgeben
 def alignments_inductive(log, net, initial_marking, final_marking):
     aligned_traces_ind = pm4py.conformance_diagnostics_alignments(log, net, initial_marking, final_marking)
-    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}') # Ausdruck zu lang
+    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}')
     return aligned_traces_ind
 
 # Visualisierung der Alignments erstellen (Histogramm der Alignment-Kosten und Move-Typen)
-def extract_alignment_stats(aligned_traces) -> pd.DataFrame: # Variablennamen etc. evtl. ändern
+def extract_alignment_stats(aligned_traces) -> pd.DataFrame:
     rows = []
-    for i, d in enumerate(aligned_traces):
+    for i, d in enumerate(aligned_traces): # Aufzählen mit Trace-Index, Kosten, Fitness und Moves
         row = {
             'trace_index': i,
             'cost': d.get('cost', None),
             'fitness': d.get('fitness', None)
         }
-        # Moves zählen
         align_pairs = d.get('alignment', [])
-        sync = 0
+        sync = 0 # Zähler der Move-Typen
         move_log = 0
         move_model = 0
-        for a, b in align_pairs:
+        for a, b in align_pairs: # Erhöhen der Zähler gemäß beobachtetem Move-Typ
             if a != '>>' and b != '>>':
                 sync += 1
             elif a != '>>' and b == '>>':
                 move_log += 1
             elif a == '>>' and b != '>>':
                 move_model += 1
-        row['sync_moves'] = sync
-        row['move_on_log'] = move_log
-        row['move_on_model'] = move_model
+        row['sync_moves'] = sync # gibt Anzahl synchroner Moves an
+        row['move_on_log'] = move_log # gibt Anzahl der Log Moves an
+        row['move_on_model'] = move_model # gibt Anzahl der Model Moves an
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -404,9 +403,9 @@ def plot_alignment_cost_hist(df_stats: pd.DataFrame, bins: int = 20):
     plt.show()
 
 def plot_move_type_bars(df_stats: pd.DataFrame):
-    agg = df_stats[['sync_moves', 'move_on_log', 'move_on_model']].sum()
-    labels = list(agg.index)
-    values = list(agg.values)
+    agg = df_stats[['sync_moves', 'move_on_log', 'move_on_model']].sum() # Move-Typen aggregieren
+    labels = list(agg.index) # Liste der Move-Typen erstellen
+    values = list(agg.values) # Liste der Werte erstellen
     plt.figure()
     plt.bar(range(len(values)), values)
     plt.xticks(range(len(labels)), labels, rotation=0)
