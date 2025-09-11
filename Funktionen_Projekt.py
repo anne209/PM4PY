@@ -35,8 +35,8 @@ def sum_up_log (log):
 
 # Anzahl der Fälle und Ereignisse anzeigen
 def get_cases_events(log):
-    cases_no = len(log['case:concept:name'].unique())
-    events_no = len(log)
+    cases_no = len(log['case:concept:name'].unique()) # Zählen der Fälle
+    events_no = len(log) # Zählen der Events
     
     print(f'Anzahl Fälle: {cases_no}\nAnzahl Ereignisse: {events_no}')
     return cases_no
@@ -117,6 +117,79 @@ def get_column_count(log, columns: list): # Übergabe muss eine Liste sein
         else:
             print(f'\nSpalte {col} existiert nicht')
 
+# Erstellen eines Histogramms der Startaktivitäten
+def plot_start_activities(log):
+    df = ensure_df(log)
+    first_acts = df.groupby('case:concept:name')['concept:name'].first() # Erste Aktivität pro Fall ermitteln
+    counts = first_acts.value_counts() # Zählen der Startaktivitäten
+    
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(counts)), counts.values)
+    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
+    plt.xlabel('Startaktivität')
+    plt.ylabel('Anzahl der Cases')
+    plt.title('Startaktivitäten')
+    plt.tight_layout()
+    plt.show()
+
+# Erstellen eines Histogramms der Endaktivitäten
+def plot_end_activities(log):
+    df = ensure_df(log)
+    last_acts = df.groupby('case:concept:name')['concept:name'].last() # Letzte Aktivität pro Fall ermitteln
+    counts = last_acts.value_counts() # Zählen der Endaktivitäten
+    
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(counts)), counts.values)
+    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
+    plt.xlabel('Endaktivität')
+    plt.ylabel('Anzahl der Cases')
+    plt.title('Endaktivitäten')
+    plt.tight_layout()
+    plt.show()
+
+# Erstellen eines Diagramms der Aktivitätshäufigkeiten
+def plot_activity_frequencies(obj):
+    df = ensure_df(obj)
+    counts = df['concept:name'].value_counts()
+    labels = counts.index.tolist()
+    values = counts.values.tolist()
+    plt.figure()
+    plt.bar(range(len(values)), values)
+    plt.xticks(range(len(labels)), labels, rotation=45, ha='right')
+    plt.ylabel('Häufigkeit (Events)')
+    plt.title('Aktivitätshäufigkeiten')
+    plt.tight_layout()
+    plt.show()
+
+# Erstellen eines Histogramms der Durchlaufzeiten der Cases
+def plot_case_duration_hist(obj, bins: int = 30):
+    df = ensure_df(obj)
+    cid = 'case:concept:name'
+    ts  = 'time:timestamp'
+    df[ts] = parse_ts(df[ts])
+    ag = df.groupby(cid)[ts].agg(['min', 'max'])
+    dur_days = (ag['max'] - ag['min']).dt.total_seconds() / 86400.0
+    plt.figure()
+    plt.hist(dur_days.dropna(), bins=bins)
+    plt.xlabel('Case-Dauer [Tage]')
+    plt.ylabel('Anzahl Cases')
+    plt.title('Histogramm der Case-Dauern')
+    plt.show()
+
+# Erstellen eines Diagramms der Events pro Tag
+def plot_events_per_day(obj):
+    df = ensure_df(obj)
+    ts = 'time:timestamp'
+    df[ts] = parse_ts(df[ts])
+    daily = df.set_index(ts).resample('D').size()
+    plt.figure()
+    daily.plot()
+    plt.xlabel('Datum')
+    plt.ylabel('Events pro Tag')
+    plt.title('Event-Zeitreihe (täglich)')
+    plt.tight_layout()
+    plt.show()
+
 # Alpha Miner anwenden
 def run_alpha_miner(log):
     net, initial_marking, final_marking = pm4py.discover_petri_net_alpha(log)
@@ -172,7 +245,7 @@ def get_temporal_profile(log):
 
 # Performance-Informationen zu Netz aus Inductive Miner hinzufügen
 def get_performance_net(log, net, initial_marking, final_marking):
-    parameters = {pn_visualizer.Variants.PERFORMANCE.value.Parameters.FORMAT: "png"}
+    parameters = {pn_visualizer.Variants.PERFORMANCE.value.Parameters.FORMAT: 'png'}
     gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters, variant=pn_visualizer.Variants.PERFORMANCE, log=log)
     pn_visualizer.view(gviz)
 
@@ -379,79 +452,6 @@ def get_simplicity(log, net, initial_marking, final_marking):
     simplicity = simplicity_evaluator.apply(net)
     print(f'Die Simplicity beträgt: {simplicity}')
 
-# Erstellen eines Histogramms der Startaktivitäten
-def plot_start_activities(log):
-    df = ensure_df(log)
-    first_acts = df.groupby('case:concept:name')['concept:name'].first() # Erste Aktivität pro Fall ermitteln
-    counts = first_acts.value_counts() # Zählen der Startaktivitäten
-    
-    plt.figure(figsize=(10, 6))
-    plt.bar(range(len(counts)), counts.values)
-    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
-    plt.xlabel('Startaktivität')
-    plt.ylabel('Anzahl der Cases')
-    plt.title('Startaktivitäten')
-    plt.tight_layout()
-    plt.show()
-
-# Erstellen eines Histogramms der Endaktivitäten
-def plot_end_activities(log):
-    df = ensure_df(log)
-    last_acts = df.groupby('case:concept:name')['concept:name'].last() # Letzte Aktivität pro Fall ermitteln
-    counts = last_acts.value_counts() # Zählen der Endaktivitäten
-    
-    plt.figure(figsize=(10, 6))
-    plt.bar(range(len(counts)), counts.values)
-    plt.xticks(range(len(counts)), counts.index, rotation=45, ha='right')
-    plt.xlabel('Endaktivität')
-    plt.ylabel('Anzahl der Cases')
-    plt.title('Endaktivitäten')
-    plt.tight_layout()
-    plt.show()
-
-# Erstellen eines Diagramms der Aktivitätshäufigkeiten
-def plot_activity_frequencies(obj):
-    df = ensure_df(obj)
-    counts = df['concept:name'].value_counts()
-    labels = counts.index.tolist()
-    values = counts.values.tolist()
-    plt.figure()
-    plt.bar(range(len(values)), values)
-    plt.xticks(range(len(labels)), labels, rotation=45, ha='right')
-    plt.ylabel('Häufigkeit (Events)')
-    plt.title('Aktivitätshäufigkeiten')
-    plt.tight_layout()
-    plt.show()
-
-# Erstellen eines Histogramms der Durchlaufzeiten der Cases
-def plot_case_duration_hist(obj, bins: int = 30):
-    df = ensure_df(obj)
-    cid = 'case:concept:name'
-    ts  = 'time:timestamp'
-    df[ts] = parse_ts(df[ts])
-    ag = df.groupby(cid)[ts].agg(['min', 'max'])
-    dur_days = (ag['max'] - ag['min']).dt.total_seconds() / 86400.0
-    plt.figure()
-    plt.hist(dur_days.dropna(), bins=bins)
-    plt.xlabel('Case-Dauer [Tage]')
-    plt.ylabel('Anzahl Cases')
-    plt.title('Histogramm der Case-Dauern')
-    plt.show()
-
-# Erstellen eines Diagramms der Events pro Tag
-def plot_events_per_day(obj):
-    df = ensure_df(obj)
-    ts = 'time:timestamp'
-    df[ts] = parse_ts(df[ts])
-    daily = df.set_index(ts).resample('D').size()
-    plt.figure()
-    daily.plot()
-    plt.xlabel('Datum')
-    plt.ylabel('Events pro Tag')
-    plt.title('Event-Zeitreihe (täglich)')
-    plt.tight_layout()
-    plt.show()
-
 # Übergabe von Arbeit ermitteln und anzeigen
 def get_handover_of_work(log):
     handover_values = pm4py.discover_handover_of_work_network(log)
@@ -480,7 +480,7 @@ def get_orga_roles(log):
 
 # Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
 
-def cluster_similar_act(handover): # Evtl. noch nach anderen Sachen clustern
+def cluster_handover(handover): # Evtl. noch nach anderen Sachen clustern
     clustering = util.cluster_affinity_propagation(handover)
     print(f'Cluster nach Übergabe von Arbeit: {clustering}')
     
