@@ -240,7 +240,9 @@ dfg_iacs_unfiltered = fkp.create_dfg_from_log(log_iacs)
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
-criteria_end_iacs = ['begin editing', 'check', 'take original document', 'calculate protocol', 'restart editing']
+criteria_end_iacs = ['remove document', 'begin editing', 'refuse', 'decide', 'calculate', 'insert document', 'withdraw', 
+                     'change department', 'check admissibiliy', 'check', 'prepare offline', 'initialize', 'finish pre-check', 
+                     'take original document', 'calculate protocol', 'restart editing', 'abort payment', 'begin admissibility check']
 
 filtered_log_iacs = fkp.filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 
