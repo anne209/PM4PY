@@ -85,10 +85,10 @@ fkp.plot_events_per_day(filtered_log_sepsis)
 alpha_net_sepsis, initial_marking_alpha_sepsis, final_marking_alpha_sepsis = fkp.run_alpha_miner(filtered_log_sepsis)
 
 # Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
-heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis = fkp.run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.0)
+heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis = fkp.run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.2)
 
-# Inductive Miner anwenden, Modell erstellen und anzeigen
-ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = fkp.run_inductive_miner(filtered_log_sepsis, noise_threshold=0.0)
+# Inductive Miner für Sepsis-Datensatz anwenden, Modell erstellen und anzeigen
+ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = fkp.run_inductive_miner_sepsis(filtered_log_sepsis)
 
 # Varianten auflisten
 fkp.show_filter_variants(filtered_log_sepsis)
@@ -188,7 +188,7 @@ fkp.get_cases_events(filtered_log_start_sepsis)
 '''# Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
 heur_net_sepsis_start, initial_marking_heur_sepsis_start, final_marking_heur_sepsis_start = fkp.run_heuristic_miner(filtered_log_start_sepsis)
 
-ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start = fkp.run_inductive_miner(filtered_log_start_sepsis)
+ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start = fkp.run_inductive_miner_sepsis(filtered_log_start_sepsis)
 
 mean_throuhput_start_sepsis = fkp.get_mean_throughput(filtered_log_start_sepsis)
 
@@ -285,10 +285,10 @@ fkp.plot_events_per_day(filtered_log_iacs)
 alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = fkp.run_alpha_miner(filtered_log_iacs)
 
 # Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
-heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
+heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0)
 
-# Inductive Miner anwenden, Modell erstellen und anzeigen
-ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = fkp.run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
+# Inductive Miner für IACS-Datensatz anwenden, Modell erstellen und anzeigen
+ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = fkp.run_inductive_miner_iacs(filtered_log_iacs)
 
 # Varianten auflisten
 fkp.show_filter_variants(filtered_log_iacs)
