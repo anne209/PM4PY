@@ -312,7 +312,7 @@ def plot_tbr_fit_flag(df_tbr: pd.DataFrame):
     plt.show()
 
 # TBR mit angepassten Einstellungen zur Vorbereitung der Throughput Analysis durchführen
-def tbr_throughput(log, net, initial_marking, final_marking):
+def tbr_throughput(log, net, initial_marking, final_marking): # Modell mit maximaler Fitness (Inductive Miner) funktionert nicht
     parameters_tbr = {
         token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.DISABLE_VARIANTS: True,
         token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.ENABLE_PLTR_FITNESS: True
