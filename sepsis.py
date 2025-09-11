@@ -33,13 +33,13 @@ log_sepsis.to_csv('log_sepsis.csv', index=False)
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
 fkp.sum_up_log(log_sepsis)
 
-# Anzahl der Fälle und Ereignisse anzeigen
+# Anzahl der Cases und Events anzeigen
 cases_no_sepsis = fkp.get_cases_events(log_sepsis)
 
 # Start- und Endaktivitäten anzeigen
 start_act_sepsis, end_act_sepsis = fkp.get_start_end_act(log_sepsis)
 
-# DFG aus ungefiltertem Log erstellen
+# DFG aus ungefiltertem Log erstellen und anzeigen
 dfg_sepsis_unfiltered = fkp.create_dfg_from_log(log_sepsis)
 
 # Filterkriterien definieren
@@ -52,14 +52,15 @@ filtered_log_sepsis = fkp.filter_log(start_act_sepsis, end_act_sepsis, log_sepsi
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
                                  col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
 
-# Beschreibung des gefilterten Logs
+# Beschreibung des gefilterten Logs inklusive Case- und Eventzahlen, Start- und Endaktivitäten
 fkp.sum_up_log(filtered_log_sepsis)
-fkp.get_cases_events(filtered_log_sepsis) # Start- und Endaktivitäten hier noch einmal anzeigen?
+fkp.get_cases_events(filtered_log_sepsis)
+fkp.get_start_end_act(filtered_log_sepsis)
 
-# DFG aus gefiltertem Log erstellen
+# DFG aus gefiltertem Log erstellen und anzeigen
 dfg_sepsis_filtered = fkp.create_dfg_from_log(filtered_log_sepsis)
 
-# Spaltenweises Zählen der Werte
+# Spaltenweises Zählen der Häufigkeit der Werte
 fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', # org:group ist nicht binär, zählt aber korrekt durch
                                        'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'DiagnosticIC', 'DiagnosticOther', 'SIRSCriteria2OrMore', 
                                        'DiagnosticXthorax', 'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos', 'Oligurie', 'DiagnosticLacticAcid',
@@ -80,25 +81,25 @@ fkp.plot_case_duration_hist(filtered_log_sepsis)
 # Erstellen eines Diagramms der Events pro Tag
 fkp.plot_events_per_day(filtered_log_sepsis)
 
-# Alpha Miner anwenden
+# Alpha Miner anwenden, Modell erstellen und anzeigen
 alpha_net_sepsis, initial_marking_alpha_sepsis, final_marking_alpha_sepsis = fkp.run_alpha_miner(filtered_log_sepsis)
 
-# Heuristic Miner anwenden und in Petri-Netz umwandeln
+# Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
 heur_petri_net_sepsis, initial_marking_heur_sepsis, final_marking_heur_sepsis = fkp.run_heuristic_miner(filtered_log_sepsis, dependency_threshold=0.0)
 
-# Inductive Miner anwenden
+# Inductive Miner anwenden, Modell erstellen und anzeigen
 ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis = fkp.run_inductive_miner(filtered_log_sepsis, noise_threshold=0.0)
 
 # Varianten auflisten
 fkp.show_filter_variants(filtered_log_sepsis)
 
-# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
+# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante, jeweils Visualisierung mit Inductive Miner und als DFG
 for i in [1, 5]:
     filtered_log_var_sepsis = fkp.filter_by_variants(filtered_log_sepsis, i)
     fkp.run_inductive_miner(filtered_log_var_sepsis)
     fkp.create_dfg_from_log(filtered_log_var_sepsis)
 
-# Mittlere Durchlaufzeit pro Fall berechnen
+# Mittlere Durchlaufzeit pro Case berechnen
 mean_throughput_sepsis = fkp.get_mean_throughput(filtered_log_sepsis)
 
 # Performance-DFG erzeugen
@@ -107,36 +108,36 @@ fkp.get_performance_dfg(filtered_log_sepsis)
 # Performance-Informationen zu Netz aus Inductive Miner hinzufügen
 fkp.get_performance_net(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# Process Tree Inductive
+# Process Tree mit Inductive Miner erstellen und anzeigen
 fkp.get_process_tree_ind(filtered_log_sepsis)
 
-# TBR mit Modell aus Inductive Miner
+# TBR mit Modell aus Inductive Miner durchführen
 df_tbr_sepsis = fkp.tbr_ind(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
+# Visualisierungen zum TBR erstellen (Histogramm der Fitness und Balkenplot fit/unfit)
 fkp.plot_tbr_fitness_hist(df_tbr_sepsis)
 fkp.plot_tbr_fit_flag(df_tbr_sepsis)
 
-# Throughput Analysis: TBR mit angepassten Einstellungen
+# TBR mit angepassten Einstellungen zur Vorbereitung der Throughput Analysis durchführen
 log_diagnostics_sepsis = pm4py.convert_to_event_log(filtered_log_sepsis)
 replayed_traces_sepsis, place_fitness_sepsis, trans_fitness_sepsis, unwanted_activities_sepsis = fkp.tbr_throughput(log_diagnostics_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+# Throughput Analysis der falsch ausgeführten Transitionen durchführen und diese ausgeben
 fkp.througput_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
 
-# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten durchführen und diese ausgeben
 fkp.throughput_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
 
-# Root Cause Analysis der falsch ausgeführten Transitionen
+# Root Cause Analysis der falsch ausgeführten Transitionen durchführen und Decision Trees erstellen
 fkp.rca_trans(log_diagnostics_sepsis, trans_fitness_sepsis)
 
-# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, durchführen und Decision Trees erstellen
 fkp.rca_act(log_diagnostics_sepsis, unwanted_activities_sepsis)
 
-# Alignments bestimmen mit Modell aus Inductive Miner
+# Alignments bestimmen mit Modell aus Inductive Miner und ausgeben
 aligned_traces_ind_sepsis = fkp.alignments_inductive(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 
-# Visualisierung der Alignments (Histogramm der Alignment-Kosten und Move-Typen)
+# Visualisierung der Alignments erstellen (Histogramm der Alignment-Kosten und Move-Typen)
 df_stats_sepsis = fkp.extract_alignment_stats(aligned_traces_ind_sepsis)
 fkp.plot_alignment_cost_hist(df_stats_sepsis)
 fkp.plot_move_type_bars(df_stats_sepsis)
@@ -149,13 +150,13 @@ fitness_align_sepsis = fkp.get_replay_fitness_align(filtered_log_sepsis, ind_net
 precision_tbr_sepsis = fkp.get_precision_tbr(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
 # precision_align_sepsis = fkp.get_precision_align(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis) # dauert zu lange
 
-# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
-f1_score_tbr_sepsis = fkp.get_f1_score(fitness_tbr_sepsis, precision_tbr_sepsis)
-# f1_score_align_sepsis = fkp.get_f1_score(fitness_align_sepsis, precision_align_sepsis) # nicht möglich (s.o.)
+# F-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
+f_score_tbr_sepsis = fkp.get_f_score(fitness_tbr_sepsis, precision_tbr_sepsis)
+# f_score_align_sepsis = fkp.get_f_score(fitness_align_sepsis, precision_align_sepsis) # nicht möglich (s.o.)
 
-# Generalization und Simplicity zwischen Log und Modell berechnen
+# Generalization und Simplicity berechnen
 fkp.get_generalization(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
-fkp.get_simplicity(filtered_log_sepsis, ind_net_sepsis, initial_marking_ind_sepsis, final_marking_ind_sepsis)
+fkp.get_simplicity(ind_net_sepsis)
 
 # Spalte bei Sepsis-Datensatz umbenennen für Social Network Analysis
 log_sepsis_sna = filtered_log_sepsis.rename(columns = {'org:group' : 'org:resource'})
@@ -175,10 +176,10 @@ fkp.get_similar_activities(log_sepsis_sna)
 # Orginisationale Rollen entdecken und ausgeben
 fkp.get_orga_roles(log_sepsis_sna)
 
-# Cluster-Analyse nach Übergabe von Arbeit
+# Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
 fkp.cluster_handover(handover_sepsis)
 
-# Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der 1. Hypothese)
+# Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der eigenen Hypothese)
 filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
 fkp.sum_up_log(filtered_log_start_sepsis)
 fkp.get_cases_events(filtered_log_start_sepsis)
@@ -227,7 +228,7 @@ log_iacs.to_csv('log_iacs.csv', index=False)
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
 fkp.sum_up_log(log_iacs)
 
-# Anzahl der Fälle und Ereignisse anzeigen
+# Anzahl der Cases und Events anzeigen
 cases_no_iacs = fkp.get_cases_events(log_iacs)
 
 # Start- und Endaktivitäten anzeigen
@@ -246,9 +247,10 @@ criteria_end_iacs = ['remove document', 'begin editing', 'refuse', 'decide', 'ca
 
 filtered_log_iacs = fkp.filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
 
-# Beschreibung des gefilterten Logs
+# Beschreibung des gefilterten Logs inklusive Case- und Eventzahlen, Start- und Endaktivitäten
 fkp.sum_up_log(filtered_log_iacs)
 fkp.get_cases_events(filtered_log_iacs)
+fkp.get_start_end_act(filtered_log_iacs)
 
 # DFG aus gefiltertem Log erstellen
 dfg_iacs_filtered = fkp.create_dfg_from_log(filtered_log_iacs)
@@ -279,25 +281,25 @@ fkp.plot_case_duration_hist(filtered_log_iacs)
 # Erstellen eines Diagramms der Events pro Tag
 fkp.plot_events_per_day(filtered_log_iacs)
 
-# Alpha Miner anwenden
+# Alpha Miner anwenden, Modell erstellen und anzeigen
 alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = fkp.run_alpha_miner(filtered_log_iacs)
 
-# Heuristic Miner anwenden und in Petri-Netz umwandeln
+# Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
 heur_petri_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0) # Anpassen
 
-# Inductive Miner anwenden
+# Inductive Miner anwenden, Modell erstellen und anzeigen
 ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = fkp.run_inductive_miner(filtered_log_iacs, noise_threshold=0.0) # Anpassen
 
 # Varianten auflisten
 fkp.show_filter_variants(filtered_log_iacs)
 
-# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
+# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante sowie jeweils Visualisierung mit Inductive Miner und als DFG
 for i in [1, 5]:
     filtered_log_var_iacs = fkp.filter_by_variants(filtered_log_iacs, i)
     fkp.run_inductive_miner(filtered_log_var_iacs)
     fkp.create_dfg_from_log(filtered_log_var_iacs)
 
-# Mittlere Durchlaufzeit pro Fall berechnen
+# Mittlere Durchlaufzeit pro Case berechnen
 mean_throughput_iacs = fkp.get_mean_throughput(filtered_log_iacs)
 
 # Performance-DFG erzeugen
@@ -306,58 +308,58 @@ fkp.get_performance_dfg(filtered_log_iacs)
 # Performance-Informationen zu Netz aus Inductive Miner hinzufügen
 fkp.get_performance_net(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# Process Tree Inductive
+# Process Tree mit Inductive Miner erstellen und anzeigen
 fkp.get_process_tree_ind(filtered_log_iacs)
 
 # Temporal Profile erstellen
 fkp.get_temporal_profile(filtered_log_iacs)
 
-# TBR mit Modell aus Inductive Miner
+# TBR mit Modell aus Inductive Miner durchführen
 df_tbr_iacs = fkp.tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
+# Visualisierungen zum TBR erstellen (Histogramm der Fitness und Balkenplot fit/unfit)
 fkp.plot_tbr_fitness_hist(df_tbr_iacs)
 fkp.plot_tbr_fit_flag(df_tbr_iacs)
 
-# Throughput Analysis: TBR mit angepassten Einstellungen
+# TBR mit angepassten Einstellungen zur Vorbereitung der Throughput Analysis durchführen
 log_diagnostics_iacs = pm4py.convert_to_event_log(filtered_log_iacs)
 replayed_traces_iacs, place_fitness_iacs, trans_fitness_iacs, unwanted_activities_iacs = fkp.tbr_throughput(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+# Throughput Analysis der falsch ausgeführten Transitionen durchführen und diese ausgeben
 fkp.througput_trans(filtered_log_iacs, trans_fitness_iacs)
 
-# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten durchführen und diese ausgeben
 fkp.throughput_act(filtered_log_iacs, unwanted_activities_iacs)
 
-# Root Cause Analysis der falsch ausgeführten Transitionen
+# Root Cause Analysis der falsch ausgeführten Transitionen durchführen und Decision Trees erstellen
 fkp.rca_trans(filtered_log_iacs, trans_fitness_iacs)
 
-# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, durchführen und Decision Trees erstellen
 fkp.rca_act(filtered_log_iacs, unwanted_activities_iacs)
 
-# Alignments bestimmen mit Modell aus Inductive Miner (dauert zu lange mit vollständigem Datensatz)
+# Alignments bestimmen und ausgeben mit Modell aus Inductive Miner (dauert zu lange mit vollständigem Datensatz)
 # aligned_traces_ind_iacs = fkp.alignments_inductive(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# Visualisierung der Alignments (Histogramm der Alignment-Kosten und Move-Typen)
+# Visualisierung der Alignments erstellen (Histogramm der Alignment-Kosten und Move-Typen), nicht möglich für IACS
 # df_stats_iacs = fkp.extract_alignment_stats(aligned_traces_ind_iacs)
 # fkp.plot_alignment_cost_hist(df_stats_iacs)
 # fkp.plot_move_type_bars(df_stats_iacs)
 
-# Fitness zwischen Log und Modell berechnen (TBR und Alignments)
+# Fitness zwischen Log und Modell berechnen (mit TBR und Alignments)
 fitness_tbr_iacs = fkp.get_replay_fitness_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 # fitness_align_iacs = fkp.get_replay_fitness_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# Precision zwischen Log und Modell berechnen (TBR und Alignments)
+# Precision zwischen Log und Modell berechnen (mit TBR und Alignments)
 precision_tbr_iacs = fkp.get_precision_tbr(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 # precision_align_iacs = fkp.get_precision_align(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
-# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
-f1_score_tbr_iacs = fkp.get_f1_score(fitness_tbr_iacs, precision_tbr_iacs)
-# f1_score_align_iacs = fkp.get_f1_score(fitness_align_iacs, precision_align_iacs)
+# F-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
+f_score_tbr_iacs = fkp.get_f_score(fitness_tbr_iacs, precision_tbr_iacs)
+# f_score_align_iacs = fkp.get_f_score(fitness_align_iacs, precision_align_iacs)
 
-# Generalization und Simplicity zwischen Log und Modell berechnen
+# Generalization und Simplicity berechnen
 fkp.get_generalization(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
-fkp.get_simplicity(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
+fkp.get_simplicity(ind_net_iacs)
 
 # Übergabe von Arbeit ermitteln und anzeigen
 handover_iacs = fkp.get_handover_of_work(filtered_log_iacs)
@@ -374,5 +376,5 @@ similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
 # Orginisationale Rollen entdecken und ausgeben
 fkp.get_orga_roles(filtered_log_iacs)
 
-# Cluster-Analyse nach Übergabe von Arbeit
-# fkp.cluster_handover(handover_iacs) # kein sinnvoller Output
+# Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
+# fkp.cluster_handover(handover_iacs) # Kein sinnvoller Output
