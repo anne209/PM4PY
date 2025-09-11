@@ -33,12 +33,12 @@ def sum_up_log (log):
     print(f'Beschreibung des Datensatzes: \n{log.describe()}')
     print(f'Head des Datensatzes: \n{log.head(10)}\nTail des Datensatzes: \n{log.tail(10)}')
 
-# Anzahl der Fälle und Ereignisse anzeigen
+# Anzahl der Cases und Events anzeigen
 def get_cases_events(log):
-    cases_no = len(log['case:concept:name'].unique()) # Zählen der Fälle
+    cases_no = len(log['case:concept:name'].unique()) # Zählen der Cases
     events_no = len(log) # Zählen der Events
     
-    print(f'Anzahl Fälle: {cases_no}\nAnzahl Ereignisse: {events_no}')
+    print(f'Anzahl Cases: {cases_no}\nAnzahl Events: {events_no}')
     return cases_no
 
 # Start- und Endaktivitäten anzeigen
@@ -49,7 +49,7 @@ def get_start_end_act(log):
     print(f'Startaktivitäten: {start_act}\nEndaktivitäten: {end_act}')
     return start_act, end_act
 
-# DFG aus Log erstellen
+# DFG aus Log erstellen und anzeigen
 def create_dfg_from_log(log_input):
     dfg, start_activities, end_activities = pm4py.discover_dfg(log_input)
     dfg_output = pm4py.view_dfg(dfg, start_activities, end_activities)
@@ -62,11 +62,11 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
     filtered_log = log
 
     for activity, count in start_acts.items(): # Iteration im Dict über den Namen der Startaktivität und ihre Häufigkeit.
-        if count / no_of_cases >= min_ratio: # Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamtfällen werden berücksichtigt.
+        if count / no_of_cases >= min_ratio: # Nur Startaktivitäten mit einem Mindestanteil von 10% an Gesamt-Cases werden berücksichtigt.
             selected_activities.add(activity) # Sammeln der Aktivitäten in einer Liste
     
     if end_crit is not None:
-        selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen Fällen, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
+        selected_end_acts = set(end_acts.keys()) - set(end_crit) # Löschen von Cases, die nicht ordungsgemäß mit Release oder Return ER geendet haben.
     
     
     if check_value_activities is not None:
@@ -84,16 +84,16 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
         problematic_groups = filtered_log.loc[drop_mask, 'org:group'].value_counts() # Zeigt an, welche Organisationsgruppe keine Laborwerte eingetragen hat
         print(f'Häufigkeit der Gruppen in fehlerhaften Zeilen: {problematic_groups}')
     
-        filtered_log.drop(index=filtered_log[drop_mask].index, inplace=True)# Alle Zeilen mit Boolean-Wert true werden herausgefiltert
+        filtered_log.drop(index=filtered_log[drop_mask].index, inplace=True) # Alle Zeilen mit Boolean-Wert true werden herausgefiltert
 
     if col_filter is not None:
-        filtered_log.drop(col_filter, axis=1, inplace=True)# Alle Spalten mit Namen in spalten_filter werden herausgefiltert
+        filtered_log.drop(col_filter, axis=1, inplace=True) # Alle Spalten mit Namen in spalten_filter werden herausgefiltert
     
     filtered_log = pm4py.filter_start_activities(filtered_log, selected_activities) # Filtern nach Startaktivitäten
-    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts)# Filtern nach Endaktivitäten
+    filtered_log = pm4py.filter_end_activities(filtered_log, selected_end_acts) # Filtern nach Endaktivitäten
 
     if delete_activities is not None:
-        filtered_log = pm4py.filter_event_attribute_values(filtered_log, 'concept:name', delete_activities, level='event', retain=False) # filtern nach Aktivitäten
+        filtered_log = pm4py.filter_event_attribute_values(filtered_log, 'concept:name', delete_activities, level='event', retain=False) # Filtern nach Aktivitäten
 
     return filtered_log
 
@@ -101,12 +101,12 @@ def filter_log(start_acts, end_acts, log, no_of_cases, min_ratio=0.1, end_crit =
 def ensure_df(obj) -> pd.DataFrame:
     if isinstance(obj, pd.DataFrame):
         return obj.copy()
-    return pm4py.convert_to_dataframe(obj)
+    return pm4py.convert_to_dataframe(obj) # Vor allem für Event Log zu Dataframe
 
 def parse_ts(series: pd.Series) -> pd.Series:
     return pd.to_datetime(series, errors='coerce', utc=True).dt.tz_convert(None)
 
-# Spaltenweises Zählen der Werte
+# Spaltenweises Zählen der Häufigkeit der Werte
 def get_column_count(log, columns: list): # Übergabe muss eine Liste sein
     df = ensure_df(log) # Umwandeln in Data Frame, sofern erforderlich
     
@@ -120,7 +120,7 @@ def get_column_count(log, columns: list): # Übergabe muss eine Liste sein
 # Erstellen eines Histogramms der Startaktivitäten
 def plot_start_activities(log):
     df = ensure_df(log)
-    first_acts = df.groupby('case:concept:name')['concept:name'].first() # Erste Aktivität pro Fall ermitteln
+    first_acts = df.groupby('case:concept:name')['concept:name'].first() # Erste Aktivität pro Case ermitteln
     counts = first_acts.value_counts() # Zählen der Startaktivitäten
     
     plt.figure(figsize=(10, 6))
@@ -135,7 +135,7 @@ def plot_start_activities(log):
 # Erstellen eines Histogramms der Endaktivitäten
 def plot_end_activities(log):
     df = ensure_df(log)
-    last_acts = df.groupby('case:concept:name')['concept:name'].last() # Letzte Aktivität pro Fall ermitteln
+    last_acts = df.groupby('case:concept:name')['concept:name'].last() # Letzte Aktivität pro Case ermitteln
     counts = last_acts.value_counts() # Zählen der Endaktivitäten
     
     plt.figure(figsize=(10, 6))
@@ -190,20 +190,20 @@ def plot_events_per_day(obj):
     plt.tight_layout()
     plt.show()
 
-# Alpha Miner anwenden
+# # Alpha Miner anwenden, Modell erstellen und anzeigen
 def run_alpha_miner(log):
     net, initial_marking, final_marking = pm4py.discover_petri_net_alpha(log)
     pm4py.view_petri_net(net, initial_marking, final_marking)
     return net, initial_marking, final_marking # Kann evtl. weg
 
-# Heuristic Miner anwenden und in Petri-Netz umwandeln
+# Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
 def run_heuristic_miner(log, dependency_threshold=0.99):
     heuristic_net = pm4py.discover_heuristics_net(log, dependency_threshold)
     pm4py.view_heuristics_net(heuristic_net)
     heuristic_to_petri = pm4py.objects.conversion.heuristics_net.variants.to_petri_net.apply(heuristic_net, parameters=None)
     return heuristic_to_petri
 
-# Inductive Miner anwenden
+# Inductive Miner anwenden, Modell erstellen und anzeigen
 def run_inductive_miner(log, noise_threshold=0.0):
     inductive_net, initial_marking_inductive, final_marking_inductive = pm4py.discover_petri_net_inductive(log, noise_threshold)
     pm4py.view_petri_net(inductive_net, initial_marking_inductive, final_marking_inductive)
@@ -218,16 +218,16 @@ def show_filter_variants(log):
             writer.writerow([key, value])
     print(f'Varianten: {variants}') # Ausdruck zu lang
 
-# Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten sowie Visualisierung
+# Filtern und Ausgeben eines Logs mit den k häufigsten Varianten
 def filter_by_variants(log, k):
     filtered_log_var = pm4py.filter_variants_top_k(log, k)
     return filtered_log_var
 
-# Mittlere Durchlaufzeit pro Fall berechnen
+# Mittlere Durchlaufzeit pro Case berechnen
 def get_mean_throughput(log):
-    durations = pm4py.get_all_case_durations(log)
+    durations = pm4py.get_all_case_durations(log) # Liste aller Case-Dauern
     mean_throughput = np.mean(durations) / 3600 # Umrechnung in Stunden
-    print(f'Die mittlere Durchlaufzeit pro Fall beträgt: {mean_throughput} Stunden')
+    print(f'Die mittlere Durchlaufzeit pro Case beträgt: {mean_throughput} Stunden')
     return mean_throughput
 
 # Performance-DFG erzeugen
@@ -249,12 +249,12 @@ def get_performance_net(log, net, initial_marking, final_marking):
     gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters, variant=pn_visualizer.Variants.PERFORMANCE, log=log)
     pn_visualizer.view(gviz)
 
-# Process Tree Inductive
+# Process Tree mit Inductive Miner erstellen und anzeigen
 def get_process_tree_ind(log):
     tree = pm4py.discover_process_tree_inductive(log)
     pm4py.view_process_tree(tree, format='png')
 
-# Helfer TBR
+# Helfer TBR erstellen
 def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variablen)namen für TBR ändern
     rows = []
     for i, d in enumerate(replayed_traces):
@@ -276,14 +276,14 @@ def tbr_list_to_dataframe(replayed_traces: List[Dict]) -> pd.DataFrame: #(Variab
         rows.append(row)
     return pd.DataFrame(rows)
 
-# TBR mit Modell aus Inductive Miner
+# TBR durchführen
 def tbr_ind(log, net, initial_marking, final_marking):
     replayed_traces = pm4py.conformance_diagnostics_token_based_replay(log, net, initial_marking, final_marking)
     df_tbr = tbr_list_to_dataframe(replayed_traces)
     print(f'Head des Token Based Replay mit Inductive Miner: \n{df_tbr.head(10)}')
     return df_tbr
 
-# Visualisierungen (Histogramm der Fitness und Balkenplot fit/unfit)
+# Visualisierungen zum TBR erstellen (Histogramm der Fitness und Balkenplot fit/unfit)
 def plot_tbr_fitness_hist(df_tbr: pd.DataFrame, bins: int = 20):
     plt.figure()
     plt.hist(df_tbr['tbr_fitness'].dropna(), bins=bins)
@@ -304,7 +304,7 @@ def plot_tbr_fit_flag(df_tbr: pd.DataFrame):
     plt.title('Fit vs. Unfit (TBR)')
     plt.show()
 
-# Throughput Analysis: TBR mit angepassten Einstellungen
+# TBR mit angepassten Einstellungen zur Vorbereitung der Throughput Analysis durchführen
 def tbr_throughput(log, net, initial_marking, final_marking):
     parameters_tbr = {
         token_based_replay.Variants.TOKEN_REPLAY.value.Parameters.DISABLE_VARIANTS: True,
@@ -322,24 +322,24 @@ def tbr_throughput(log, net, initial_marking, final_marking):
 
     return replayed_traces, place_fitness, trans_fitness, unwanted_activities
 
-# Throughput Analysis der falsch ausgeführten Transitionen und Ausgabe
+# Throughput Analysis der falsch ausgeführten Transitionen durchführen und diese ausgeben
 def througput_trans(log, trans_fitness):
     trans_diagnostics = duration_diagnostics.diagnose_from_trans_fitness(log, trans_fitness)
     for trans in trans_diagnostics:
         print(f'Throughput Analysis der falsch ausgeführten Transitionen{trans, trans_diagnostics[trans]}')
 
-# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten und Ausgabe
+# Throughput Analysis der nicht im Modell enthaltenen Aktivitäten durchführen und diese ausgeben
 def throughput_act(log, unwanted_activities):
     act_diagnostics = duration_diagnostics.diagnose_from_notexisting_activities(log, unwanted_activities)
     for act in act_diagnostics:
         print(act, act_diagnostics[act])
 
-# Vorbereitung Root Cause Analysis
+# Vorbereitung Root Cause Analysis durchführen
 string_attributes = ['org:group']
 numeric_attributes = []
 parameters = {'string_attributes': string_attributes, 'numeric_attributes': numeric_attributes}
 
-# Root Cause Analysis der falsch ausgeführten Transitionen
+# Root Cause Analysis der falsch ausgeführten Transitionen durchführen und Decision Trees erstellen
 def rca_trans(log, trans_fitness):
     trans_root_cause = root_cause_analysis.diagnose_from_trans_fitness(log, trans_fitness, parameters=parameters)
     for trans in trans_root_cause:
@@ -350,24 +350,24 @@ def rca_trans(log, trans_fitness):
         gviz = dt_vis.apply(clf, feature_names, classes)
         dt_vis.view(gviz)
 
-# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, und Ausgabe
+# RCA der ausgeführten Aktivitäten, die nicht im Prozessmodell enthalten sind, durchführen und Decision Trees erstellen
 def rca_act(log, unwanted_activities):
     act_root_cause = root_cause_analysis.diagnose_from_notexisting_activities(log, unwanted_activities, parameters=parameters)
     for act in act_root_cause:
-        clf = act_root_cause[act]["clf"]
-        feature_names = act_root_cause[act]["feature_names"]
-        classes = act_root_cause[act]["classes"]
+        clf = act_root_cause[act]['clf']
+        feature_names = act_root_cause[act]['feature_names']
+        classes = act_root_cause[act]['classes']
         # Visualization can be called
         gviz = dt_vis.apply(clf, feature_names, classes)
         dt_vis.view(gviz)
 
-# Alignments bestimmen mit Modell aus Inductive Miner
+# Alignments bestimmen und ausgeben
 def alignments_inductive(log, net, initial_marking, final_marking):
     aligned_traces_ind = pm4py.conformance_diagnostics_alignments(log, net, initial_marking, final_marking)
     print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}') # Ausdruck zu lang
     return aligned_traces_ind
 
-# Visualisierung der Alignments (Histogramm der Alignment-Kosten und Move-Typen)
+# Visualisierung der Alignments erstellen (Histogramm der Alignment-Kosten und Move-Typen)
 def extract_alignment_stats(aligned_traces) -> pd.DataFrame: # Variablennamen etc. evtl. ändern
     rows = []
     for i, d in enumerate(aligned_traces):
@@ -413,7 +413,7 @@ def plot_move_type_bars(df_stats: pd.DataFrame):
     plt.title('Move-Typen (aggregiert)')
     plt.show()
 
-# Fitness zwischen Log und Modell berechnen (TBR und Alignments)
+# Fitness zwischen Log und Modell berechnen (mit TBR und Alignments)
 def get_replay_fitness_tbr(log, net, initial_marking, final_marking):
     rp_fitness_tbr = pm4py.fitness_token_based_replay(log, net, initial_marking, final_marking)
     print(f'Ergebnisse für die Fitness mit Token-Based Replay: {rp_fitness_tbr}')
@@ -424,7 +424,7 @@ def get_replay_fitness_align(log, net, initial_marking, final_marking):
     print(f'Ergebnisse für die Fitness mit Alignments: {rp_fitness_align}')
     return rp_fitness_align['log_fitness']
 
-# Precision zwischen Log und Modell berechnen (TBR und Alignments)
+# Precision zwischen Log und Modell berechnen (mit TBR und Alignments)
 def get_precision_tbr(log, net, initial_marking, final_marking):
     precision_tbr = pm4py.precision_token_based_replay(log, net, initial_marking, final_marking)
     print(f'Die Precision mit Token-Based Replay beträgt: {precision_tbr}')
@@ -435,20 +435,20 @@ def get_precision_align(log, net, initial_marking, final_marking):
     print(f'Die Precision mit Alignments beträgt: {precision_align}')
     return precision_align
 
-# F1-Score zwischen Log und Modell berechnen, Fitness und Precision gegeben
-def get_f1_score(fitness, precision):
+# F-Score zwischen Log und Modell aus ermittelten Fitness- und Precision-Werten berechnen
+def get_f_score(fitness, precision):
     if fitness + precision == 0: # Division durch 0 vermeiden
         return 0.0
-    f1_score = 2 * (fitness * precision) / (fitness + precision)
-    print(f'Der F1-Score beträgt: {f1_score}')
-    return f1_score
+    f_score = 2 * (fitness * precision) / (fitness + precision) # F-Score anhand von Formel berechnen
+    print(f'Der F-Score beträgt: {f_score}')
+    return f_score
 
-# Generalization und Simplicity zwischen Log und Modell berechnen
+# Generalization und Simplicity berechnen
 def get_generalization(log, net, initial_marking, final_marking):
     generalization = generalization_evaluator.apply(log, net, initial_marking, final_marking)
     print(f'Die Generalization beträgt: {generalization}')
 
-def get_simplicity(log, net, initial_marking, final_marking):
+def get_simplicity(net):
     simplicity = simplicity_evaluator.apply(net)
     print(f'Die Simplicity beträgt: {simplicity}')
 
@@ -478,22 +478,22 @@ def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
     print(f'Organisationale Rollen: {roles}')
 
-# Cluster-Analyse nach ähnlichen Aktivitäten der Individuen
+# Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
 
-def cluster_handover(handover): # Evtl. noch nach anderen Sachen clustern
+def cluster_handover(handover):
     clustering = util.cluster_affinity_propagation(handover)
     print(f'Cluster nach Übergabe von Arbeit: {clustering}')
     
-    colours = ['green', 'yellow', 'orange', 'red', 'blue', 'purple', 'brown']
+    colours = ['green', 'yellow', 'orange', 'red', 'blue', 'purple', 'brown'] # Farben für die Cluster
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for colour, (x, ys) in zip(colours, clustering.items()):
+    for colour, (x, ys) in zip(colours, clustering.items()): # Erstellen eines Scatterplots der Cluster
         ax.scatter([x] * len(ys), ys, c=colour, linewidth=0, s=50)
-    plt.show() # aktuell nicht geordnet
+    plt.show()
 
 # Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der 1. Hypothese)
 def filter_by_start_activities(log, start_activities, starts_to_remove):
-    starts_to_keep = [act for act in start_activities.keys() if act not in starts_to_remove]
+    starts_to_keep = [act for act in start_activities.keys() if act not in starts_to_remove] # Alle Startaktivitäten behalten, außer den zu entfernenden
     filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
     return  filtered_log_start
