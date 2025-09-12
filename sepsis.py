@@ -61,10 +61,10 @@ fkp.get_start_end_act(filtered_log_sepsis)
 dfg_sepsis_filtered = fkp.create_dfg_from_log(filtered_log_sepsis)
 
 # Spaltenweises Zählen der Häufigkeit der Werte
-fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', # org:group ist nicht binär, zählt aber korrekt durch
+fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', 
                                        'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'DiagnosticIC', 'DiagnosticOther', 'SIRSCriteria2OrMore', 
                                        'DiagnosticXthorax', 'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos', 'Oligurie', 'DiagnosticLacticAcid',
-                                       'Diagnose', 'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG']) # Diagnose zu lang für Darstellung
+                                       'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG'])
 
 # Erstellen eines Histogramms der Startaktivitäten
 fkp.plot_start_activities(filtered_log_sepsis)
@@ -96,7 +96,7 @@ fkp.show_filter_variants(filtered_log_sepsis)
 # Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante, jeweils Visualisierung mit Inductive Miner und als DFG
 for i in [1, 5]:
     filtered_log_var_sepsis = fkp.filter_by_variants(filtered_log_sepsis, i)
-    fkp.run_inductive_miner(filtered_log_var_sepsis)
+    fkp.run_inductive_miner_sepsis(filtered_log_var_sepsis)
     fkp.create_dfg_from_log(filtered_log_var_sepsis)
 
 # Mittlere Durchlaufzeit pro Case berechnen
@@ -256,7 +256,7 @@ fkp.get_start_end_act(filtered_log_iacs)
 dfg_iacs_filtered = fkp.create_dfg_from_log(filtered_log_iacs)
 
 # Spaltenweises Zählen der Werte
-fkp.get_column_count(filtered_log_iacs, ['success', 'org:resource', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random', # org:resource zu lang
+fkp.get_column_count(filtered_log_iacs, ['success', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random',
                                      'case:penalty_AJLP', 'case:penalty_BGKV', 'case:penalty_AUVP', 'case:risk_factor', 'case:small farmer', # Spalten noch anpassen (dazu/weg)
                                      'case:penalty_BGP', 'case:department', 'case:penalty_C16', 'case:penalty_BGK', 'case:penalty_AVUVP',
                                      'case:penalty_CC', 'case:penalty_AVJLP', 'case:penalty_C9', 'case:cross_compliance', 'case:rejected',
@@ -296,7 +296,7 @@ fkp.show_filter_variants(filtered_log_iacs)
 # Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante sowie jeweils Visualisierung mit Inductive Miner und als DFG
 for i in [1, 5]:
     filtered_log_var_iacs = fkp.filter_by_variants(filtered_log_iacs, i)
-    fkp.run_inductive_miner(filtered_log_var_iacs)
+    fkp.run_inductive_miner_iacs(filtered_log_var_iacs)
     fkp.create_dfg_from_log(filtered_log_var_iacs)
 
 # Mittlere Durchlaufzeit pro Case berechnen
