@@ -375,6 +375,3 @@ similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
 
 # Orginisationale Rollen entdecken und ausgeben
 fkp.get_orga_roles(filtered_log_iacs)
-
-# Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
-# fkp.cluster_handover(handover_iacs) # Kein sinnvoller Output
