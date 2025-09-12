@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 import sklearn # Cluster-Analyse SNA funktioniert sonst nicht
 import csv
+import string
+import re
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
@@ -549,7 +551,42 @@ def get_similar_activities(log):
 # Orginisationale Rollen entdecken und ausgeben
 def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
-    print(f'Organisationale Rollen: {roles}')
+
+    print('Organisationale Rollen:')
+    for role in roles:
+        print(f'Aktivitäten: {role.activities}')
+        print(f'Verantwortliche Rolle: {role.originator_importance}')
+        wichtigste_rolle = max(role.originator_importance, key=role.originator_importance.get)
+        wert = role.originator_importance[wichtigste_rolle]
+        print(f'Verantwortliche Rolle: {wichtigste_rolle} (Häufigkeit: {wert})')
+        print('-' * 40)
+
+
+
+def rename_org_resource(log):
+
+    def is_anonymous(val):
+        return bool(re.fullmatch(r'[a-z0-9]+', str(val)))
+    
+    anonymous = [val for val in log['org:resource'].unique() if is_anonymous(val)]
+    
+    def label_generator():
+        from string import ascii_uppercase
+        n = 1
+        while True:
+            for s in product(ascii_uppercase, repeat=n):
+                yield ''.join(s)
+            n += 1
+    from itertools import product
+    labels = label_generator()
+    mapping = {val: next(labels) for val in anonymous}
+    
+    log['org:resource'] = log['org:resource'].map(lambda x: mapping[x] if x in mapping else x)
+    
+    print("Mapping kryptischer Werte zu Buchstaben:")
+    print(mapping)
+    return mapping
+
 
 # Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
 

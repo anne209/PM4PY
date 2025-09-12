@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 import sklearn
 import csv
+import string
+import re
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
@@ -387,6 +389,7 @@ fkp.get_working_together(filtered_log_iacs)
 similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
 
 # Orginisationale Rollen entdecken und ausgeben
+fkp.rename_org_resource(filtered_log_iacs)
 fkp.get_orga_roles(filtered_log_iacs)
 
 # Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
