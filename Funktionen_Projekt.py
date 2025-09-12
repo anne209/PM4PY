@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 import sklearn # Cluster-Analyse SNA funktioniert sonst nicht
 import csv
+import string
+import re
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
@@ -223,7 +225,25 @@ def show_filter_variants(log):
         writer = csv.writer(f)
         for key, value in variants.items():
             writer.writerow([key, value])
-    print(f'Varianten: {variants}') # Ausdruck zu lang
+    length_dict = {}
+    for variant, count in variants.items():
+        l =len(variant)
+        if l in length_dict:
+            length_dict[l] += count
+        else:
+            length_dict[l] = count
+    
+    total_variants = sum(length_dict.values())
+    avg_length = sum(length *count for length, count in length_dict.items()) / total_variants
+    min_length = min(length_dict)
+    max_length = max(length_dict)
+    mode_length = max(length_dict, key=length_dict.get)
+
+    print('Längen-Häufigkeiten', dict(sorted(length_dict.items())))
+    print(f'Durchschnittliche Länge: {avg_length}')
+    print(f'Kürzeste Variante: {min_length}')
+    print(f'Längste Variante: {max_length}')
+    print(f'Häufigste Variante: {mode_length} (Häufigkeit: {length_dict[mode_length]})')
 
 # Filtern und Ausgeben eines Logs mit den k häufigsten Varianten
 def filter_by_variants(log, k):
@@ -249,6 +269,55 @@ def get_temporal_profile(log):
         writer = csv.writer(f)
         for key, value in temporal_profile.items():
             writer.writerow([key, value])
+
+
+def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
+    
+    mask_begin = log['concept:name'] == begin
+    mask_finish = log['concept:name'] == finish
+    if allow_abort:
+        mask_finish = mask_finish | (log['concept:name'] == 'abort payment')
+    log_begin = log[mask_begin].copy()
+    log_finish = log[mask_finish].copy()
+
+    log_begin = log_begin.rename(columns={'time:timestamp': 'start_time'})
+    log_finish = log_finish.rename(columns={'time:timestamp': 'end_time'})
+
+    merged = pd.merge_asof(
+        log_begin.sort_values('start_time'),
+        log_finish.sort_values('end_time'),
+        by='case:identity:id',
+        left_on='start_time',
+        right_on='end_time',
+        direction='forward'
+    )
+
+    result = log.copy()
+    indices_to_drop = []
+
+    for _, row in merged.iterrows():
+        
+        begin_index = result[
+            (result['concept:name'] == begin) &
+            (result['case:identity:id'] == row['case:identity:id']) &
+            (result['time:timestamp'] == row['start_time'])
+        ].index
+
+        finish_index = result[
+            (result['concept:name'].isin([finish] + (['abort payment'] if allow_abort else []))) &
+            (result['case:identity:id'] == row['case:identity:id']) &
+            (result['time:timestamp'] == row['end_time'])
+        ].index
+
+        if len(begin_index) > 0:
+            i = begin_index[0]
+        result.at[i, 'concept:name'] = new_name
+        result.at[i, 'start_timestamp'] = row['start_time']
+        result.at[i, 'time:timestamp'] = row['end_time']
+        indices_to_drop.extend(finish_index)
+
+    result = result.drop(index=indices_to_drop).reset_index(drop=True)
+    return result
 
 # Performance-Informationen zu Netz aus Inductive Miner hinzufügen
 def get_performance_net(log, net, initial_marking, final_marking):
@@ -482,7 +551,42 @@ def get_similar_activities(log):
 # Orginisationale Rollen entdecken und ausgeben
 def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
-    print(f'Organisationale Rollen: {roles}')
+
+    print('Organisationale Rollen:')
+    for role in roles:
+        print(f'Aktivitäten: {role.activities}')
+        print(f'Verantwortliche Rolle: {role.originator_importance}')
+        wichtigste_rolle = max(role.originator_importance, key=role.originator_importance.get)
+        wert = role.originator_importance[wichtigste_rolle]
+        print(f'Verantwortliche Rolle: {wichtigste_rolle} (Häufigkeit: {wert})')
+        print('-' * 40)
+
+
+
+def rename_org_resource(log):
+
+    def is_anonymous(val):
+        return bool(re.fullmatch(r'[a-z0-9]+', str(val)))
+    
+    anonymous = [val for val in log['org:resource'].unique() if is_anonymous(val)]
+    
+    def label_generator():
+        from string import ascii_uppercase
+        n = 1
+        while True:
+            for s in product(ascii_uppercase, repeat=n):
+                yield ''.join(s)
+            n += 1
+    from itertools import product
+    labels = label_generator()
+    mapping = {val: next(labels) for val in anonymous}
+    
+    log['org:resource'] = log['org:resource'].map(lambda x: mapping[x] if x in mapping else x)
+    
+    print("Mapping kryptischer Werte zu Buchstaben:")
+    print(mapping)
+    return mapping
+
 
 # Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
 

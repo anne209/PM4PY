@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 import sklearn
 import csv
+import string
+import re
 from typing import List, Dict
 import xml.etree.ElementTree as ET
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
@@ -240,7 +242,7 @@ dfg_iacs_unfiltered = fkp.create_dfg_from_log(log_iacs)
 # Filterkriterien definieren
 column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_BGKV', 'case:penalty_BGP', 'case:penalty_AVUVP', 
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
-                      'case:penalty_JLP5'] # complete, 215, False, False, False, True, True, False, False, False
+                      'case:penalty_JLP5', 'activity'] # complete, 215, False, False, False, True, True, False, False, False
 criteria_end_iacs = ['remove document', 'begin editing', 'refuse', 'decide', 'calculate', 'insert document', 'withdraw', 
                      'change department', 'check admissibiliy', 'check', 'prepare offline', 'initialize', 'finish pre-check', 
                      'take original document', 'calculate protocol', 'restart editing', 'abort payment', 'begin admissibility check']
@@ -312,7 +314,20 @@ fkp.get_performance_net(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iac
 fkp.get_process_tree_ind(filtered_log_iacs)
 
 # Temporal Profile erstellen
-fkp.get_temporal_profile(filtered_log_iacs)
+
+temp_prof_iacs = filtered_log_iacs.copy()
+temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None)
+
+temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin editing', 'finish editing', 'editing')
+temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin preparations', 'finish preparations', 'preparations')
+temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin payment', 'finish payment', 'payment', allow_abort=True)
+
+temp_prof_iacs = pm4py.filter_event_attribute_values(temp_prof_iacs, 'concept:name', ['begin editing', 'finish editing', 
+                                                                                      'begin preperations', 'finish preparations', 
+                                                                                      'begin payment', 'finish payment', 
+                                                                                      'abort payment'], level='event', retain=False)
+
+fkp.get_temporal_profile(temp_prof_iacs)
 
 # TBR mit Modell aus Inductive Miner durchführen
 df_tbr_iacs = fkp.tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
@@ -374,4 +389,8 @@ fkp.get_working_together(filtered_log_iacs)
 similar_activities_iacs = fkp.get_similar_activities(filtered_log_iacs)
 
 # Orginisationale Rollen entdecken und ausgeben
+fkp.rename_org_resource(filtered_log_iacs)
 fkp.get_orga_roles(filtered_log_iacs)
+
+# Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
+# fkp.cluster_handover(handover_iacs) # Kein sinnvoller Output
