@@ -61,10 +61,10 @@ fkp.get_start_end_act(filtered_log_sepsis)
 dfg_sepsis_filtered = fkp.create_dfg_from_log(filtered_log_sepsis)
 
 # Spaltenweises Zählen der Häufigkeit der Werte
-fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', # org:group ist nicht binär, zählt aber korrekt durch
+fkp.get_column_count(filtered_log_sepsis, ['InfectionSuspected', 'org:group', 'DiagnosticBlood', 'DisfuncOrg', 'SIRSCritTachypnea', 'Hypotensie', 
                                        'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'DiagnosticIC', 'DiagnosticOther', 'SIRSCriteria2OrMore', 
                                        'DiagnosticXthorax', 'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos', 'Oligurie', 'DiagnosticLacticAcid',
-                                       'Diagnose', 'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG']) # Diagnose zu lang für Darstellung
+                                       'Hypoxie', 'DiagnosticUrinarySediment', 'DiagnosticECG'])
 
 # Erstellen eines Histogramms der Startaktivitäten
 fkp.plot_start_activities(filtered_log_sepsis)
