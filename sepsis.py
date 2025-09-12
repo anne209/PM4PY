@@ -96,7 +96,7 @@ fkp.show_filter_variants(filtered_log_sepsis)
 # Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante, jeweils Visualisierung mit Inductive Miner und als DFG
 for i in [1, 5]:
     filtered_log_var_sepsis = fkp.filter_by_variants(filtered_log_sepsis, i)
-    fkp.run_inductive_miner(filtered_log_var_sepsis)
+    fkp.run_inductive_miner_sepsis(filtered_log_var_sepsis)
     fkp.create_dfg_from_log(filtered_log_var_sepsis)
 
 # Mittlere Durchlaufzeit pro Case berechnen
@@ -296,7 +296,7 @@ fkp.show_filter_variants(filtered_log_iacs)
 # Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante sowie jeweils Visualisierung mit Inductive Miner und als DFG
 for i in [1, 5]:
     filtered_log_var_iacs = fkp.filter_by_variants(filtered_log_iacs, i)
-    fkp.run_inductive_miner(filtered_log_var_iacs)
+    fkp.run_inductive_miner_iacs(filtered_log_var_iacs)
     fkp.create_dfg_from_log(filtered_log_var_iacs)
 
 # Mittlere Durchlaufzeit pro Case berechnen
