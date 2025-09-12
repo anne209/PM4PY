@@ -256,7 +256,7 @@ fkp.get_start_end_act(filtered_log_iacs)
 dfg_iacs_filtered = fkp.create_dfg_from_log(filtered_log_iacs)
 
 # Spaltenweises Zählen der Werte
-fkp.get_column_count(filtered_log_iacs, ['success', 'org:resource', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random', # org:resource zu lang
+fkp.get_column_count(filtered_log_iacs, ['success', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random',
                                      'case:penalty_AJLP', 'case:penalty_BGKV', 'case:penalty_AUVP', 'case:risk_factor', 'case:small farmer', # Spalten noch anpassen (dazu/weg)
                                      'case:penalty_BGP', 'case:department', 'case:penalty_C16', 'case:penalty_BGK', 'case:penalty_AVUVP',
                                      'case:penalty_CC', 'case:penalty_AVJLP', 'case:penalty_C9', 'case:cross_compliance', 'case:rejected',
