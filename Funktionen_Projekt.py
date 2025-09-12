@@ -223,7 +223,25 @@ def show_filter_variants(log):
         writer = csv.writer(f)
         for key, value in variants.items():
             writer.writerow([key, value])
-    print(f'Varianten: {variants}') # Ausdruck zu lang
+    length_dict = {}
+    for variant, count in variants.items():
+        l =len(variant)
+        if l in length_dict:
+            length_dict[l] += count
+        else:
+            length_dict[l] = count
+    
+    total_variants = sum(length_dict.values())
+    avg_length = sum(length *count for length, count in length_dict.items()) / total_variants
+    min_length = min(length_dict)
+    max_length = max(length_dict)
+    mode_length = max(length_dict, key=length_dict.get)
+
+    print('Längen-Häufigkeiten', dict(sorted(length_dict.items())))
+    print(f'Durchschnittliche Länge: {avg_length}')
+    print(f'Kürzeste Variante: {min_length}')
+    print(f'Längste Variante: {max_length}')
+    print(f'Häufigste Variante: {mode_length} (Häufigkeit: {length_dict[mode_length]})')
 
 # Filtern und Ausgeben eines Logs mit den k häufigsten Varianten
 def filter_by_variants(log, k):
