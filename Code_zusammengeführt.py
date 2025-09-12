@@ -986,3 +986,65 @@ throughput_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)
 rca_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
 
 rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''# Filtern nach mehreren Blutwerten
+
+def filter_by_multiple_attributes(log, attribute_thresholds):
+    """
+    Filter cases where any of the specified attributes exceed their thresholds
+    
+    Args:
+        log: Event log to filter
+        attribute_thresholds: Dictionary with attribute names as keys and threshold values as values
+                            Example: {"Leucocytes": 10, "CRP": 5}
+    
+    Returns:
+        Filtered log containing cases where any attribute exceeds its threshold
+    """
+    
+    # Convert log to dataframe
+    df = ensure_df(log)
+    # Initialize mask for filtering
+    mask = pd.Series(False, index=df.index)
+    
+    # Apply filters for each attribute
+    for attribute, threshold in attribute_thresholds.items():
+        # Create mask for current attribute
+        current_mask = df[attribute].astype(float) > threshold
+        # Combine with overall mask using OR
+        mask = mask | current_mask
+    
+    # Get case IDs that meet any of the conditions
+    case_ids = df[mask]['case:concept:name'].unique()
+    
+    # Filter the original dataframe to keep all events of matching cases
+    filtered_df = df[df['case:concept:name'].isin(case_ids)]
+    
+    # Convert back to event log
+    filtered_log = filtered_df # pm4py.convert_to_event_log(filtered_df)
+    
+    return filtered_log
+
+# Usage example:
+thresholds_sepsis = {'Leucocytes': 10,'CRP': 5, 'LacticAcid': 2.44}
+filtered_log_lab = filter_by_multiple_attributes(log_sepsis, thresholds_sepsis)
+sum_up_log(filtered_log_lab)
+get_cases_events(filtered_log_lab)'''
