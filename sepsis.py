@@ -54,6 +54,11 @@ filtered_log_sepsis = fkp.filter_log(start_act_sepsis, end_act_sepsis, log_sepsi
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
                                  col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
 
+#mask = (filtered_log_sepsis['case:concept:name'] == 'LKA') & (filtered_log_sepsis['concept:name'] == 'Leucocytes')
+#idx_to_drop = filtered_log_sepsis[mask].tail(1).index
+#filtered_log_sepsis = filtered_log_sepsis.drop(idx_to_drop).reset_index(drop=True)
+
+
 # Beschreibung des gefilterten Logs inklusive Case- und Eventzahlen, Start- und Endaktivitäten
 fkp.sum_up_log(filtered_log_sepsis)
 fkp.get_cases_events(filtered_log_sepsis)
