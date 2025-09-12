@@ -440,7 +440,6 @@ def rca_act(log, unwanted_activities):
 # Alignments bestimmen und ausgeben
 def alignments_inductive(log, net, initial_marking, final_marking):
     aligned_traces_ind = pm4py.conformance_diagnostics_alignments(log, net, initial_marking, final_marking)
-    print(f'Ergebnisse für die Alignments mit Inductive Miner: {aligned_traces_ind}')
     return aligned_traces_ind
 
 # Visualisierung der Alignments erstellen (Histogramm der Alignment-Kosten und Move-Typen)
