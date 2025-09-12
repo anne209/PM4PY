@@ -250,6 +250,55 @@ def get_temporal_profile(log):
         for key, value in temporal_profile.items():
             writer.writerow([key, value])
 
+
+def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
+    
+    mask_begin = log['concept:name'] == begin
+    mask_finish = log['concept:name'] == finish
+    if allow_abort:
+        mask_finish = mask_finish | (log['concept:name'] == 'abort payment')
+    log_begin = log[mask_begin].copy()
+    log_finish = log[mask_finish].copy()
+
+    log_begin = log_begin.rename(columns={'time:timestamp': 'start_time'})
+    log_finish = log_finish.rename(columns={'time:timestamp': 'end_time'})
+
+    merged = pd.merge_asof(
+        log_begin.sort_values('start_time'),
+        log_finish.sort_values('end_time'),
+        by='case:identity:id',
+        left_on='start_time',
+        right_on='end_time',
+        direction='forward'
+    )
+
+    result = log.copy()
+    indices_to_drop = []
+
+    for _, row in merged.iterrows():
+        
+        begin_index = result[
+            (result['concept:name'] == begin) &
+            (result['case:identity:id'] == row['case:identity:id']) &
+            (result['time:timestamp'] == row['start_time'])
+        ].index
+
+        finish_index = result[
+            (result['concept:name'].isin([finish] + (['abort payment'] if allow_abort else []))) &
+            (result['case:identity:id'] == row['case:identity:id']) &
+            (result['time:timestamp'] == row['end_time'])
+        ].index
+
+        if len(begin_index) > 0:
+            i = begin_index[0]
+        result.at[i, 'concept:name'] = new_name
+        result.at[i, 'start_timestamp'] = row['start_time']
+        result.at[i, 'time:timestamp'] = row['end_time']
+        indices_to_drop.extend(finish_index)
+
+    result = result.drop(index=indices_to_drop).reset_index(drop=True)
+    return result
+
 # Performance-Informationen zu Netz aus Inductive Miner hinzufügen
 def get_performance_net(log, net, initial_marking, final_marking):
     parameters = {pn_visualizer.Variants.PERFORMANCE.value.Parameters.FORMAT: 'png'}
