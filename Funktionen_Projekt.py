@@ -486,7 +486,7 @@ def get_orga_roles(log):
 
 # Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
 
-def cluster_handover(handover):
+def cluster_handover(handover): # Funktioniert nur für den Sepsis-Datensatz
     clustering = util.cluster_affinity_propagation(handover)
     print(f'Cluster nach Übergabe von Arbeit: {clustering}')
     
