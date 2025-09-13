@@ -319,7 +319,7 @@ fkp.get_process_tree_ind(filtered_log_iacs)
 
 # Neues Log für Temporal Profile erstellen, in dem "begin" und "finish" zu einer Aktivität zusammengefasst werden
 temp_prof_iacs = filtered_log_iacs.copy()
-temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None) # Neue Spalte für Startzeit hinzufügen
+# temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None) # Neue Spalte für Startzeit hinzufügen
 
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin editing', 'finish editing', 'editing')
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin preparations', 'finish preparations', 'preparations')
