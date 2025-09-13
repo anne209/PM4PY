@@ -25,7 +25,7 @@ from pm4py.visualization.graphs import visualizer as graphs_visualizer
 import Funktionen_Projekt as fkp
 
 
-# BEGINN DES SEPSIS-DATENSATZES --------------------------------------------
+'''# BEGINN DES SEPSIS-DATENSATZES --------------------------------------------
 
 
 # Import des Sepsis-Datensatzes
@@ -189,7 +189,7 @@ fkp.cluster_handover(handover_sepsis)
 # Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der eigenen Hypothese)
 filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
 fkp.sum_up_log(filtered_log_start_sepsis)
-fkp.get_cases_events(filtered_log_start_sepsis)
+fkp.get_cases_events(filtered_log_start_sepsis)'''
 
 
 '''# Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
@@ -229,8 +229,8 @@ fkp.rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)'''
 
 
 # Import des IACS-Datensatzes
-log_iacs = fkp.import_xes('D:/Users/domin/Desktop/Projekt PM&Py/Datensätze/IACS/BPI Challenge 2018 (x0.05).xes') # Datei aktuell nicht hochgeladen
-log_iacs.to_csv('log_iacs.csv', index=False)
+log_iacs = fkp.import_xes('D:/Users/domin/Desktop/Projekt PM&Py/Datensätze/IACS/BPI Challenge 2018.xes') # Datei aktuell nicht hochgeladen
+# log_iacs.to_csv('log_iacs.csv', index=False)
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
 fkp.sum_up_log(log_iacs)
