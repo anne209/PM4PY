@@ -54,9 +54,9 @@ filtered_log_sepsis = fkp.filter_log(start_act_sepsis, end_act_sepsis, log_sepsi
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
                                  col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
 
-#mask = (filtered_log_sepsis['case:concept:name'] == 'LKA') & (filtered_log_sepsis['concept:name'] == 'Leucocytes')
-#idx_to_drop = filtered_log_sepsis[mask].tail(1).index
-#filtered_log_sepsis = filtered_log_sepsis.drop(idx_to_drop).reset_index(drop=True)
+mask = (filtered_log_sepsis['case:concept:name'] == 'LKA') & (filtered_log_sepsis['concept:name'] == 'Leucocytes')
+idx_to_drop = filtered_log_sepsis[mask].tail(1).index
+filtered_log_sepsis = filtered_log_sepsis.drop(idx_to_drop).reset_index(drop=True)
 
 
 # Beschreibung des gefilterten Logs inklusive Case- und Eventzahlen, Start- und Endaktivitäten
@@ -249,7 +249,7 @@ column_filter_iacs = ['lifecycle:transition', 'case:program-id', 'case:penalty_B
                       'case:greening', 'case:basic payment', 'case:penalty_B5F', 'case:penalty_JLP7', 
                       'case:penalty_JLP5', 'activity'] # complete, 215, False, False, False, True, True, False, False, False
 criteria_end_iacs = ['remove document', 'begin editing', 'refuse', 'decide', 'calculate', 'insert document', 'withdraw', 
-                     'change department', 'check admissibiliy', 'check', 'prepare offline', 'initialize', 'finish pre-check', 
+                     'change department', 'check admissibility', 'check', 'prepare offline', 'initialize', 'finish pre-check', 
                      'take original document', 'calculate protocol', 'restart editing', 'abort payment', 'begin admissibility check']
 
 filtered_log_iacs = fkp.filter_log(start_act_iacs, end_act_iacs, log_iacs, cases_no_iacs, end_crit=criteria_end_iacs, col_filter=column_filter_iacs)
@@ -319,7 +319,7 @@ fkp.get_process_tree_ind(filtered_log_iacs)
 
 # Neues Log für Temporal Profile erstellen, in dem "begin" und "finish" zu einer Aktivität zusammengefasst werden
 temp_prof_iacs = filtered_log_iacs.copy()
-temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None) # Neue Spalte für Startzeit hinzufügen
+# temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None) # Neue Spalte für Startzeit hinzufügen
 
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin editing', 'finish editing', 'editing')
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin preparations', 'finish preparations', 'preparations')
