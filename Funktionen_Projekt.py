@@ -271,19 +271,20 @@ def get_temporal_profile(log):
         for key, value in temporal_profile.items():
             writer.writerow([key, value])
 
-
+# Neues Log für Temporal Profile erstellen, in dem "begin" und "finish" zu einer Aktivität zusammengefasst werden
 def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
     
     mask_begin = log['concept:name'] == begin
     mask_finish = log['concept:name'] == finish
-    if allow_abort:
+    if allow_abort: # Speziell für die Endaktivität 'abort payment' im IACS-Datensatz
         mask_finish = mask_finish | (log['concept:name'] == 'abort payment')
-    log_begin = log[mask_begin].copy()
-    log_finish = log[mask_finish].copy()
+    log_begin = log[mask_begin].copy() # Kopie der Zeilen mit der Startaktivität
+    log_finish = log[mask_finish].copy() # Kopie der Zeilen mit der Endaktivität
 
     log_begin = log_begin.rename(columns={'time:timestamp': 'start_time'})
     log_finish = log_finish.rename(columns={'time:timestamp': 'end_time'})
 
+    # Sortieren und Zusammenführen der DataFrames basierend auf Case-ID und Zeitstempeln
     merged = pd.merge_asof(
         log_begin.sort_values('start_time'),
         log_finish.sort_values('end_time'),
@@ -296,6 +297,7 @@ def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
     result = log.copy()
     indices_to_drop = []
 
+    # Iteration über die zusammengeführten Zeilen und Aktualisierung des Original-DataFrames
     for _, row in merged.iterrows():
         
         begin_index = result[
@@ -312,8 +314,8 @@ def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
 
         if len(begin_index) > 0:
             i = begin_index[0]
-        result.at[i, 'concept:name'] = new_name
-        result.at[i, 'start_timestamp'] = row['start_time']
+        result.at[i, 'concept:name'] = new_name # Neue Aktivität
+        result.at[i, 'start_timestamp'] = row['start_time'] # Neue Spalte für Startzeit
         result.at[i, 'time:timestamp'] = row['end_time']
         indices_to_drop.extend(finish_index)
 
@@ -562,26 +564,26 @@ def get_orga_roles(log):
         print('-' * 40)
 
 
-
+# Name der anonymen Ressourcen in Buchstaben umwandeln und Mapping ausgeben
 def rename_org_resource(log):
 
     def is_anonymous(val):
         return bool(re.fullmatch(r'[a-z0-9]+', str(val)))
     
-    anonymous = [val for val in log['org:resource'].unique() if is_anonymous(val)]
+    anonymous = [val for val in log['org:resource'].unique() if is_anonymous(val)] # Liste der anonymen Ressourcen
     
     def label_generator():
         
         n = 1
         while True:
-            for s in product(ascii_uppercase, repeat=n):
+            for s in product(ascii_uppercase, repeat=n): # Buchstaben-Kombinationen generieren
                 yield ''.join(s)
             n += 1
 
     labels = label_generator()
-    mapping = {val: next(labels) for val in anonymous}
+    mapping = {val: next(labels) for val in anonymous} # Mapping der anonymen Ressourcen zu Buchstaben
     
-    log['org:resource'] = log['org:resource'].map(lambda x: mapping[x] if x in mapping else x)
+    log['org:resource'] = log['org:resource'].map(lambda x: mapping[x] if x in mapping else x) # Umbenennen der anonymen Ressourcen im Log
     
     print("Mapping anonymer Namen zu Buchstaben:")
     print(mapping)

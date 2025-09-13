@@ -264,14 +264,13 @@ dfg_iacs_filtered = fkp.create_dfg_from_log(filtered_log_iacs)
 
 # Spaltenweises Zählen der Werte
 fkp.get_column_count(filtered_log_iacs, ['success', 'doctype', 'subprocess', 'note', 'case:young farmer', 'case:selected_random',
-                                     'case:penalty_AJLP', 'case:penalty_BGKV', 'case:penalty_AUVP', 'case:risk_factor', 'case:small farmer', # Spalten noch anpassen (dazu/weg)
-                                     'case:penalty_BGP', 'case:department', 'case:penalty_C16', 'case:penalty_BGK', 'case:penalty_AVUVP',
-                                     'case:penalty_CC', 'case:penalty_AVJLP', 'case:penalty_C9', 'case:cross_compliance', 'case:rejected',
-                                     'case:greening', 'case:penalty_C4', 'case:penalty_AVGP', 'case:penalty_ABP', 'case:penalty_B6', 'case:penalty_B4',
-                                     'case:penalty_B5', 'case:penalty_AVBP', 'case:penalty_B2', 'case:selected_risk', 'case:penalty_B3',
-                                     'case:selected_manually', 'case:penalty_AGP', 'case:penalty_B16', 'case:penalty_GP1', 'case:basic payment',
-                                     'case:penalty_B5F', 'case:penalty_V5', 'case:redistribution', 'case:penalty_JLP6', 'case:penalty_JLP7', 'case:year',
-                                     'case:penalty_JLP5', 'case:penalty_JLP2', 'case:penalty_JLP3', 'case:number_parcels', 'case:penalty_JLP1'])
+                                     'case:penalty_AJLP', 'case:penalty_AUVP', 'case:risk_factor', 'case:small farmer', # Spalten noch anpassen (dazu/weg)
+                                     'case:department', 'case:penalty_C16', 'case:penalty_BGK', 'case:penalty_CC', 'case:penalty_AVJLP', 
+                                     'case:penalty_C9', 'case:cross_compliance', 'case:rejected', 'case:penalty_C4', 'case:penalty_AVGP', 
+                                     'case:penalty_ABP', 'case:penalty_B6', 'case:penalty_B4', 'case:penalty_B5', 'case:penalty_AVBP', 
+                                     'case:penalty_B2', 'case:selected_risk', 'case:penalty_B3', 'case:selected_manually', 'case:penalty_AGP',
+                                     'case:penalty_B16', 'case:penalty_GP1', 'case:penalty_V5', 'case:redistribution', 'case:penalty_JLP6', 'case:year',
+                                     'case:penalty_JLP2', 'case:penalty_JLP3', 'case:number_parcels', 'case:penalty_JLP1'])
 
 # Erstellen eines Histogramms der Startaktivitäten
 fkp.plot_start_activities(filtered_log_iacs)
@@ -318,20 +317,21 @@ fkp.get_performance_net(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iac
 # Process Tree mit Inductive Miner erstellen und anzeigen
 fkp.get_process_tree_ind(filtered_log_iacs)
 
-# Temporal Profile erstellen
-
+# Neues Log für Temporal Profile erstellen, in dem "begin" und "finish" zu einer Aktivität zusammengefasst werden
 temp_prof_iacs = filtered_log_iacs.copy()
-temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None)
+temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None) # Neue Spalte für Startzeit hinzufügen
 
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin editing', 'finish editing', 'editing')
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin preparations', 'finish preparations', 'preparations')
 temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin payment', 'finish payment', 'payment', allow_abort=True)
 
+# Übrig gebliebene "begin" und "finish" Aktivitäten entfernen
 temp_prof_iacs = pm4py.filter_event_attribute_values(temp_prof_iacs, 'concept:name', ['begin editing', 'finish editing', 
                                                                                       'begin preperations', 'finish preparations', 
                                                                                       'begin payment', 'finish payment', 
                                                                                       'abort payment'], level='event', retain=False)
 
+# Temporal Profile erstellen
 fkp.get_temporal_profile(temp_prof_iacs)
 
 # TBR mit Modell aus Inductive Miner durchführen
