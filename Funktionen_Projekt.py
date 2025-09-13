@@ -315,8 +315,8 @@ def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
         if len(begin_index) > 0:
             i = begin_index[0]
         result.at[i, 'concept:name'] = new_name # Neue Aktivität
-        result.at[i, 'start_timestamp'] = row['start_time'] # Neue Spalte für Startzeit
-        result.at[i, 'time:timestamp'] = row['end_time']
+        result.at[i, 'start_timestamp'] = row['start_time'] # Startzeit einfügen
+        result.at[i, 'time:timestamp'] = row['end_time'] # Endzeit einfügen
         indices_to_drop.extend(finish_index)
 
     result = result.drop(index=indices_to_drop).reset_index(drop=True)
@@ -471,6 +471,7 @@ def extract_alignment_stats(aligned_traces) -> pd.DataFrame:
         rows.append(row)
     return pd.DataFrame(rows)
 
+# Kosten für Alignmens im Histogramm darstellen
 def plot_alignment_cost_hist(df_stats: pd.DataFrame, bins: int = 20):
     plt.figure()
     plt.hist(df_stats['cost'].dropna(), bins=bins)
@@ -479,6 +480,7 @@ def plot_alignment_cost_hist(df_stats: pd.DataFrame, bins: int = 20):
     plt.title('Histogramm: Alignment-Kosten')
     plt.show()
 
+# Move-Typen in Balkendiagramm darstellen
 def plot_move_type_bars(df_stats: pd.DataFrame):
     agg = df_stats[['sync_moves', 'move_on_log', 'move_on_model']].sum() # Move-Typen aggregieren
     labels = list(agg.index) # Liste der Move-Typen erstellen
