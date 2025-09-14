@@ -611,3 +611,78 @@ def filter_by_start_activities(log, start_activities, starts_to_remove):
     starts_to_keep = [act for act in start_activities.keys() if act not in starts_to_remove] # Alle Startaktivitäten behalten, außer den zu entfernenden
     filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
     return  filtered_log_start
+
+def cut_log_at_activity(log, activity_name):
+    events_cut = []
+    for case_id, activity in log.groupby('case:concept:name', group_keys=False):
+
+        index = activity.index[activity['concept:name'] == activity_name][0]
+
+        events_cut.append(activity.loc[:index]) 
+    return pd.concat(events_cut)
+
+# Alle Events bis einschließlich der angegebenen Aktivität werden behalten
+
+def filter_by_multiple_attributes(log, attribute_thresholds):
+    
+    # Maske initialisieren
+    mask = pd.Series(False, index=log.index)
+    
+    # Für jedes Attribut und dessen Schwellenwert
+    for attribute, threshold in attribute_thresholds.items():
+        # Erstellen einer Maske für das aktuelle Attribut
+        current_mask = log[attribute].astype(float) > threshold
+        # Kombinieren der Masken (logisches ODER)
+        mask = mask | current_mask
+    
+    # Ermitteln der eindeutigen Fall-IDs, die die Kriterien erfüllen
+    case_ids = log[mask]['case:concept:name'].unique()
+    
+    # Filtern des Logs basierend auf den Fall-IDs
+    filtered_log = log[log['case:concept:name'].isin(case_ids)]
+    
+    
+    return filtered_log
+
+
+
+def plot_infection_suspected_comparison(df1, df2, labels=('Above Threshold', 'Below Threshold')):
+    # Nur True/False, NaN ignorieren
+    vc1 = df1['InfectionSuspected'].dropna().value_counts()
+    vc2 = df2['InfectionSuspected'].dropna().value_counts()
+    
+    # Sicherstellen, dass True/False vorhanden sind
+    categories = [True, False]
+    vc1 = vc1.reindex(categories, fill_value=0)
+    vc2 = vc2.reindex(categories, fill_value=0)
+    
+    # Werte in gewünschter Reihenfolge: True-False-True-False
+    values = [vc1[True], vc1[False], vc2[True], vc2[False]]
+    x_labels = ['Above True', 'Above False', 'Below True', 'Below False']
+    
+    plt.figure(figsize=(8,5))
+    plt.bar(range(len(values)), values, color=['red', 'green', 'red', 'green'])
+    plt.xticks(range(len(values)), x_labels, rotation=45, ha='right')
+    plt.ylabel('Anzahl der Events')
+    plt.title('InfectionSuspected: True/False pro Gruppe')
+    
+    # Werte über den Balken anzeigen
+    for i, val in enumerate(values):
+        plt.text(i, val + 0.5, str(val), ha='center')
+    
+    plt.tight_layout()
+    plt.show()
+
+    return vc1, vc2
+
+
+def print_share_of_infection_suspected(vc_above, vc_below):
+    total_above = vc_above.sum()
+    total_below = vc_below.sum()
+    
+    share_above = (vc_above[True] / total_above * 100) if total_above > 0 else 0
+    share_below = (vc_below[False] / total_below * 100) if total_below > 0 else 0
+    
+    print(f'Share of InfectionSuspected=True above thresholds: {share_above:.2f}% ({vc_above[True]} out of {total_above})')
+    print(f'Share of InfectionSuspected=False below thresholds: {share_below:.2f}% ({vc_below[False]} out of {total_below})')
+
