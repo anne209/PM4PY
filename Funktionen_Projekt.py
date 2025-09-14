@@ -8,6 +8,7 @@ import sklearn # Cluster-Analyse SNA funktioniert sonst nicht
 import csv
 import string
 import re
+import ast
 from typing import List, Dict
 from pm4py.algo.discovery.temporal_profile import algorithm as temporal_profile_discovery
 from pm4py.visualization.petri_net import visualizer as pn_visualizer # Für Zusatzinfos Performance
@@ -266,10 +267,43 @@ def get_performance_dfg(log):
 # Temporal Profile erstellen
 def get_temporal_profile(log):
     temporal_profile = temporal_profile_discovery.apply(log)
+    temporal_profile.columns = ["transition", "mean+stdev"] # Spalten benennen
     with open('temporal_profile.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         for key, value in temporal_profile.items():
             writer.writerow([key, value])
+    
+    temporal_profile["transition"] = temporal_profile["transition"].apply(ast.literal_eval)
+    temporal_profile["mean+stdev"] = temporal_profile["mean+stdev"].apply(ast.literal_eval)
+
+    temporal_profile[["mean", "stdev"]] = pd.DataFrame(temporal_profile["mean+stdev"].tolist(), index=temporal_profile.index) # Tupel in seperate Spalten aufteilen
+    temporal_profile = temporal_profile.drop(columns=["mean+stdev"])
+
+    temporal_profile["mean_days"] = temporal_profile["mean"] / (60*60*24) # Sekunden in Tage umrechnen
+    temporal_profile["stdev_days"] = temporal_profile["stdev"] / (60*60*24)
+
+    temporal_profile["cv"] = temporal_profile["stdev"] / temporal_profile["mean"] # Variationskoeffizient berechnen
+
+    temporal_profile["transition_str"] = temporal_profile["transition"].apply(lambda x: f"{x[0]} → {x[1]}") # Tupel in Strings konvertieren für die Achse
+
+    top_bottlenecks = temporal_profile.sort_values("mean_days", ascending=False).head(10) # Top-10 Bottlenecks
+
+    plt.figure(figsize=(10,6))
+    plt.barh(top_bottlenecks["transition_str"], top_bottlenecks["mean_days"])
+    plt.xlabel("Durchschnittliche Dauer (Tage)")
+    plt.title("Top 10 langsamste Übergänge")
+    plt.gca().invert_yaxis()
+    plt.show()
+
+    top_unstable = temporal_profile.sort_values("cv", ascending=False).head(10) # Top-10 instabile Übergänge
+
+    plt.figure(figsize=(10,6))
+    plt.barh(top_unstable["transition_str"], top_unstable["cv"])
+    plt.xlabel("Variationskoeffizient (Stdev / Mean)")
+    plt.title("Top 10 instabilste Übergänge")
+    plt.gca().invert_yaxis()
+    plt.show()
+
 
 # Neues Log für Temporal Profile erstellen, in dem "begin" und "finish" zu einer Aktivität zusammengefasst werden
 def merge_begin_finish(log, begin, finish, new_name, allow_abort=False):
