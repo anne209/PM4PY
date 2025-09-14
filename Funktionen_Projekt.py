@@ -268,12 +268,12 @@ def get_performance_dfg(log):
 def get_temporal_profile(log):
     temporal_profile = temporal_profile_discovery.apply(log)
     temporal_profile.columns = ["transition", "mean+stdev"] # Spalten benennen
-    with open('temporal_profile.csv', 'w', newline='') as f:
+    with open('temporal_profile.csv', 'w', newline='') as f: # Temporal profile als CSV-Datei
         writer = csv.writer(f)
         for key, value in temporal_profile.items():
             writer.writerow([key, value])
     
-    temporal_profile["transition"] = temporal_profile["transition"].apply(ast.literal_eval)
+    temporal_profile["transition"] = temporal_profile["transition"].apply(ast.literal_eval) 
     temporal_profile["mean+stdev"] = temporal_profile["mean+stdev"].apply(ast.literal_eval)
 
     temporal_profile[["mean", "stdev"]] = pd.DataFrame(temporal_profile["mean+stdev"].tolist(), index=temporal_profile.index) # Tupel in seperate Spalten aufteilen
@@ -288,7 +288,7 @@ def get_temporal_profile(log):
 
     top_bottlenecks = temporal_profile.sort_values("mean_days", ascending=False).head(10) # Top-10 Bottlenecks
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10,6)) # Plot der Top-10 Bottlenecks
     plt.barh(top_bottlenecks["transition_str"], top_bottlenecks["mean_days"])
     plt.xlabel("Durchschnittliche Dauer (Tage)")
     plt.title("Top 10 langsamste Übergänge")
@@ -297,7 +297,7 @@ def get_temporal_profile(log):
 
     top_unstable = temporal_profile.sort_values("cv", ascending=False).head(10) # Top-10 instabile Übergänge
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10,6)) # Plot der Top-10 instabilsten Übergänge
     plt.barh(top_unstable["transition_str"], top_unstable["cv"])
     plt.xlabel("Variationskoeffizient (Stdev / Mean)")
     plt.title("Top 10 instabilste Übergänge")
@@ -646,7 +646,8 @@ def filter_by_start_activities(log, start_activities, starts_to_remove):
     filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
     return  filtered_log_start
 
-def cut_log_at_activity(log, activity_name):
+# Alle Events bis einschließlich der angegebenen Aktivität werden behalten
+def cut_log_at_activity(log, activity_name): 
     events_cut = []
     for case_id, activity in log.groupby('case:concept:name', group_keys=False):
 
@@ -655,8 +656,7 @@ def cut_log_at_activity(log, activity_name):
         events_cut.append(activity.loc[:index]) 
     return pd.concat(events_cut)
 
-# Alle Events bis einschließlich der angegebenen Aktivität werden behalten
-
+# Filtern des Logs basierend auf mehreren Attributen und deren Schwellenwerten
 def filter_by_multiple_attributes(log, attribute_thresholds):
     
     # Maske initialisieren
@@ -678,8 +678,7 @@ def filter_by_multiple_attributes(log, attribute_thresholds):
     
     return filtered_log
 
-
-
+# Vergleich der InfectionSuspected-Werte in zwei DataFrames (über/unter Schwellenwerten)
 def plot_infection_suspected_comparison(df1, df2, labels=('Above Threshold', 'Below Threshold')):
     # Nur True/False, NaN ignorieren
     vc1 = df1['InfectionSuspected'].dropna().value_counts()
@@ -709,7 +708,7 @@ def plot_infection_suspected_comparison(df1, df2, labels=('Above Threshold', 'Be
 
     return vc1, vc2
 
-
+# Ausgabe des Anteils von InfectionSuspected True/False in den beiden Gruppen
 def print_share_of_infection_suspected(vc_above, vc_below): # Ausgabe des Anteils von InfectionSuspected True/False in den beiden Gruppen
     total_above = vc_above.sum()
     total_below = vc_below.sum()

@@ -53,7 +53,7 @@ filtered_log_sepsis = fkp.filter_log(start_act_sepsis, end_act_sepsis, log_sepsi
                                  delete_activities = deleted_activities_sepsis, check_value_activities=activity_check_sepsis, 
                                  col_filter=column_filter_sepsis) # Übergabe der Parameter an die Filter-Methode
 
-mask = (filtered_log_sepsis['case:concept:name'] == 'LKA') & (filtered_log_sepsis['concept:name'] == 'Leucocytes')
+mask = (filtered_log_sepsis['case:concept:name'] == 'LKA') & (filtered_log_sepsis['concept:name'] == 'Leucocytes') # Entfernen des Events Leucocytes im Case LKA, damit dieser auf Release A endet
 idx_to_drop = filtered_log_sepsis[mask].tail(1).index
 filtered_log_sepsis = filtered_log_sepsis.drop(idx_to_drop).reset_index(drop=True)
 
@@ -187,30 +187,30 @@ fkp.cluster_handover(handover_sepsis)
 
 # Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der eigenen Hypothese)
 filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
-filtered_log_start_sepsis = pm4py.filter_event_attribute_values(filtered_log_start_sepsis, 'concept:name', ['ER Registration'], level='case', retain=True)
-fkp.plot_start_activities(filtered_log_start_sepsis)
-filtered_log_start_sepsis = fkp.cut_log_at_activity(filtered_log_start_sepsis, 'ER Registration')
-fkp.create_dfg_from_log(filtered_log_start_sepsis)
-fkp.get_performance_dfg(filtered_log_start_sepsis)
+filtered_log_start_sepsis = pm4py.filter_event_attribute_values(filtered_log_start_sepsis, 'concept:name', ['ER Registration'], level='case', retain=True) # Sicherstellen, dass nur Cases mit Aktivität ER Registration enthalten sind
+fkp.plot_start_activities(filtered_log_start_sepsis) # Ausgabe der Startaktivitäten
+filtered_log_start_sepsis = fkp.cut_log_at_activity(filtered_log_start_sepsis, 'ER Registration') # Log an der Aktivität ER Registration abschneiden, damit diese die Endaktivität ist
+fkp.create_dfg_from_log(filtered_log_start_sepsis) # DFG aus dem gefilterten Log erstellen
+fkp.get_performance_dfg(filtered_log_start_sepsis) # Performance-DFG aus dem gefilterten Log erstellen
 
 
 # Herausfiltern aller Cases des Sepsis-Datensatze, die auffällige Blutwerte haben und Vergleich mit den Fällen mit unauffälligen Blutwerten
 thresholds_sepsis = {'Leucocytes': 10,'CRP': 5, 'LacticAcid': 2.44}
-filtered_log_lab = fkp.filter_by_multiple_attributes(log_sepsis, thresholds_sepsis)
-filtered_log_below = log_sepsis[~log_sepsis.index.isin(filtered_log_lab.index)]
+filtered_log_lab = fkp.filter_by_multiple_attributes(log_sepsis, thresholds_sepsis) # Herausfiltern der Fälle mit auffälligen Blutwerten
+filtered_log_below = log_sepsis[~log_sepsis.index.isin(filtered_log_lab.index)] # Herausfiltern der Fälle mit unauffälligen Blutwerten
 
 
-fkp.get_start_end_act(filtered_log_lab) 
+fkp.get_start_end_act(filtered_log_lab) # Start- und Endaktivitäten der beiden Logs anzeigen
 fkp.plot_start_activities(filtered_log_lab) 
 fkp.plot_end_activities(filtered_log_lab)
 fkp.get_start_end_act(filtered_log_below) 
 fkp.plot_start_activities(filtered_log_below) 
 fkp.plot_end_activities(filtered_log_below)
-fkp.create_dfg_from_log(filtered_log_below)
+fkp.create_dfg_from_log(filtered_log_below) # DFGs vom Log unterhalb der Schwellenwerte erstellen
 print(filtered_log_lab['InfectionSuspected'].value_counts())
 print(filtered_log_below['InfectionSuspected'].value_counts())
-above_infection, below_infection = fkp.plot_infection_suspected_comparison(filtered_log_lab, filtered_log_below)
-fkp.print_share_of_infection_suspected(above_infection, below_infection)
+above_infection, below_infection = fkp.plot_infection_suspected_comparison(filtered_log_lab, filtered_log_below) # Vergleich der Häufigkeiten von InfectionSuspected True/False in den beiden Logs
+fkp.print_share_of_infection_suspected(above_infection, below_infection) # Ausgabe des Anteils von InfectionSuspected True/False in den beiden Gruppen
 
 
 
@@ -320,7 +320,7 @@ temp_prof_iacs = pm4py.filter_event_attribute_values(temp_prof_iacs, 'concept:na
                                                                                       'abort payment'], level='event', retain=False)
 
 # Temporal Profile erstellen (funktiniert nicht mit dem vollständigen IACS-Datensatz)
-fkp.get_temporal_profile(temp_prof_iacs)
+fkp.get_temporal_profile(temp_prof_iacs) # Erstellt CSV-Datei und Plots
 
 # TBR mit Modell aus Inductive Miner durchführen
 df_tbr_iacs = fkp.tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
