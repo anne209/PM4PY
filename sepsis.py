@@ -188,11 +188,13 @@ fkp.cluster_handover(handover_sepsis)
 
 # Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der eigenen Hypothese)
 filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
-fkp.sum_up_log(filtered_log_start_sepsis)
-fkp.get_cases_events(filtered_log_start_sepsis)'''
-
-
-'''# Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
+filtered_log_start_sepsis = pm4py.filter_event_attribute_values(filtered_log_start_sepsis, 'concept:name', ['ER Registration'], level='case', retain=True)
+fkp.plot_start_activities(filtered_log_start_sepsis)
+filtered_log_start_sepsis = fkp.cut_log_at_activity(filtered_log_start_sepsis, 'ER Registration')
+fkp.create_dfg_from_log(filtered_log_start_sepsis)
+fkp.get_performance_dfg(filtered_log_start_sepsis)
+'''
+# Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
 heur_net_sepsis_start, initial_marking_heur_sepsis_start, final_marking_heur_sepsis_start = fkp.run_heuristic_miner(filtered_log_start_sepsis)
 
 ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start = fkp.run_inductive_miner_sepsis(filtered_log_start_sepsis)
@@ -221,8 +223,8 @@ fkp.throughput_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_star
 
 fkp.rca_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
 
-fkp.rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)'''
-
+fkp.rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)
+'''
 
 
 # BEGINN DES IACS-DATENSATZES ---------------------------------------------

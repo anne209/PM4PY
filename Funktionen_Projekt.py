@@ -611,3 +611,14 @@ def filter_by_start_activities(log, start_activities, starts_to_remove):
     starts_to_keep = [act for act in start_activities.keys() if act not in starts_to_remove] # Alle Startaktivitäten behalten, außer den zu entfernenden
     filtered_log_start  = pm4py.filter_start_activities(log, starts_to_keep)
     return  filtered_log_start
+
+def cut_log_at_activity(log, activity_name):
+    events_cut = []
+    for case_id, activity in log.groupby('case:concept:name', group_keys=False):
+
+        index = activity.index[activity['concept:name'] == activity_name][0]
+
+        events_cut.append(activity.loc[:index]) 
+    return pd.concat(events_cut)
+
+# Alle Events bis einschließlich der angegebenen Aktivität werden behalten
