@@ -259,7 +259,7 @@ fkp.sum_up_log(filtered_log_iacs)
 fkp.get_cases_events(filtered_log_iacs)
 fkp.get_start_end_act(filtered_log_iacs)
 
-# DFG aus gefiltertem Log erstellen
+'''# DFG aus gefiltertem Log erstellen
 dfg_iacs_filtered = fkp.create_dfg_from_log(filtered_log_iacs)
 
 # Spaltenweises Zählen der Werte
@@ -288,7 +288,7 @@ fkp.plot_case_duration_hist(filtered_log_iacs)
 fkp.plot_events_per_day(filtered_log_iacs)
 
 # Alpha Miner anwenden, Modell erstellen und anzeigen
-alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = fkp.run_alpha_miner(filtered_log_iacs)
+alpha_net_iacs, initial_marking_alpha_iacs, final_marking_alpha_iacs = fkp.run_alpha_miner(filtered_log_iacs)'''
 
 # Heuristic Miner anwenden, Modell anzeigen und Umwandlung in Petri-Netz
 heur_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.run_heuristic_miner(filtered_log_iacs, dependency_threshold=0.0)
@@ -296,7 +296,7 @@ heur_net_iacs, initial_marking_heur_iacs, final_marking_heur_iacs = fkp.run_heur
 # Inductive Miner für IACS-Datensatz anwenden, Modell erstellen und anzeigen
 ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs = fkp.run_inductive_miner_iacs(filtered_log_iacs)
 
-# Varianten auflisten
+'''# Varianten auflisten
 fkp.show_filter_variants(filtered_log_iacs)
 
 # Filtern und Ausgeben eines Logs mit den 5 häufigsten Varianten bzw. der häufigsten Variante sowie jeweils Visualisierung mit Inductive Miner und als DFG
@@ -315,26 +315,26 @@ fkp.get_performance_dfg(filtered_log_iacs)
 fkp.get_performance_net(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Process Tree mit Inductive Miner erstellen und anzeigen
-fkp.get_process_tree_ind(filtered_log_iacs)
+fkp.get_process_tree_ind(filtered_log_iacs)'''
 
 # Neues Log für Temporal Profile erstellen, in dem "begin" und "finish" zu einer Aktivität zusammengefasst werden
-temp_prof_iacs = filtered_log_iacs.copy()
+# temp_prof_iacs = filtered_log_iacs.copy()
 # temp_prof_iacs.insert(loc=temp_prof_iacs.columns.get_loc('time:timestamp'), column='start_timestamp', value=None) # Neue Spalte für Startzeit hinzufügen
 
-temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin editing', 'finish editing', 'editing')
-temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin preparations', 'finish preparations', 'preparations')
-temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin payment', 'finish payment', 'payment', allow_abort=True)
+# temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin editing', 'finish editing', 'editing')
+# temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin preparations', 'finish preparations', 'preparations')
+# temp_prof_iacs = fkp.merge_begin_finish(temp_prof_iacs, 'begin payment', 'finish payment', 'payment', allow_abort=True)
 
 # Übrig gebliebene "begin" und "finish" Aktivitäten entfernen
-temp_prof_iacs = pm4py.filter_event_attribute_values(temp_prof_iacs, 'concept:name', ['begin editing', 'finish editing', 
+'''temp_prof_iacs = pm4py.filter_event_attribute_values(temp_prof_iacs, 'concept:name', ['begin editing', 'finish editing', 
                                                                                       'begin preperations', 'finish preparations', 
                                                                                       'begin payment', 'finish payment', 
-                                                                                      'abort payment'], level='event', retain=False)
+                                                                                      'abort payment'], level='event', retain=False)'''
 
-# Temporal Profile erstellen
-fkp.get_temporal_profile(temp_prof_iacs)
+# Temporal Profile erstellen (funktiniert nicht mit dem vollständigen IACS-Datensatz)
+# fkp.get_temporal_profile(temp_prof_iacs)
 
-# TBR mit Modell aus Inductive Miner durchführen
+'''# TBR mit Modell aus Inductive Miner durchführen
 df_tbr_iacs = fkp.tbr_ind(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
 
 # Visualisierungen zum TBR erstellen (Histogramm der Fitness und Balkenplot fit/unfit)
@@ -379,7 +379,7 @@ f_score_tbr_iacs = fkp.get_f_score(fitness_tbr_iacs, precision_tbr_iacs)
 
 # Generalization und Simplicity berechnen
 fkp.get_generalization(filtered_log_iacs, ind_net_iacs, initial_marking_ind_iacs, final_marking_ind_iacs)
-fkp.get_simplicity(ind_net_iacs)
+fkp.get_simplicity(ind_net_iacs)'''
 
 # Übergabe von Arbeit ermitteln und anzeigen
 handover_iacs = fkp.get_handover_of_work(filtered_log_iacs)
