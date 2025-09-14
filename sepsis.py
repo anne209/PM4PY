@@ -195,7 +195,7 @@ fkp.create_dfg_from_log(filtered_log_start_sepsis)
 fkp.get_performance_dfg(filtered_log_start_sepsis)
 
 
-
+# Herausfiltern aller Cases des Sepsis-Datensatze, die auffällige Blutwerte haben und Vergleich mit den Fällen mit unauffälligen Blutwerten
 thresholds_sepsis = {'Leucocytes': 10,'CRP': 5, 'LacticAcid': 2.44}
 filtered_log_lab = fkp.filter_by_multiple_attributes(log_sepsis, thresholds_sepsis)
 filtered_log_below = log_sepsis[~log_sepsis.index.isin(filtered_log_lab.index)]
@@ -207,44 +207,12 @@ fkp.plot_end_activities(filtered_log_lab)
 fkp.get_start_end_act(filtered_log_below) 
 fkp.plot_start_activities(filtered_log_below) 
 fkp.plot_end_activities(filtered_log_below)
+fkp.create_dfg_from_log(filtered_log_below)
 print(filtered_log_lab['InfectionSuspected'].value_counts())
 print(filtered_log_below['InfectionSuspected'].value_counts())
 above_infection, below_infection = fkp.plot_infection_suspected_comparison(filtered_log_lab, filtered_log_below)
 fkp.print_share_of_infection_suspected(above_infection, below_infection)
 
-
-'''
-# Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
-heur_net_sepsis_start, initial_marking_heur_sepsis_start, final_marking_heur_sepsis_start = fkp.run_heuristic_miner(filtered_log_start_sepsis)
-
-ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start = fkp.run_inductive_miner_sepsis(filtered_log_start_sepsis)
-
-mean_throuhput_start_sepsis = fkp.get_mean_throughput(filtered_log_start_sepsis)
-
-fkp.get_performance_dfg(filtered_log_start_sepsis)
-
-fkp.get_performance_net(filtered_log_start_sepsis, ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start)
-
-fkp.plot_start_activities(filtered_log_start_sepsis)
-
-fkp.plot_end_activities(filtered_log_start_sepsis)
-
-fkp.plot_activity_frequencies(filtered_log_start_sepsis)
-
-fkp.plot_case_duration_hist(filtered_log_start_sepsis)
-
-log_diagnostics_sepsis_start = pm4py.convert_to_event_log(filtered_log_start_sepsis)
-
-replayed_traces_sepsis_start, place_fitness_sepsis_start, trans_fitness_sepsis_start, unwanted_activities_sepsis_start = fkp.tbr_throughput(log_diagnostics_sepsis_start, ind_net_sepsis_start, initial_marking_ind_sepsis_start, final_marking_ind_sepsis_start)
-
-fkp.througput_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
-
-fkp.throughput_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)
-
-fkp.rca_trans(log_diagnostics_sepsis_start, trans_fitness_sepsis_start)
-
-fkp.rca_act(log_diagnostics_sepsis_start, unwanted_activities_sepsis_start)
-'''
 
 
 # BEGINN DES IACS-DATENSATZES ---------------------------------------------
