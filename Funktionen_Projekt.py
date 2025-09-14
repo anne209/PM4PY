@@ -591,11 +591,11 @@ def get_orga_roles(log):
     roles = pm4py.discover_organizational_roles(log)
 
     print('Organisationale Rollen:')
-    for role in roles:
+    for role in roles: # for-Schleife über die Rollennamen im Dict roles
         print(f'Aktivitäten: {role.activities}')
         print(f'Verantwortliche Rolle: {role.originator_importance}')
-        important_role = max(role.originator_importance, key=role.originator_importance.get)
-        value = role.originator_importance[important_role]
+        important_role = max(role.originator_importance, key=role.originator_importance.get) # Rolle mit der höchsten Häufigkeit ermitteln
+        value = role.originator_importance[important_role] # Häufigkeit der wichtigsten Rolle
         print(f'Verantwortliche Rolle: {important_role} (Häufigkeit: {value})')
         print('-' * 40)
 
@@ -710,13 +710,13 @@ def plot_infection_suspected_comparison(df1, df2, labels=('Above Threshold', 'Be
     return vc1, vc2
 
 
-def print_share_of_infection_suspected(vc_above, vc_below):
+def print_share_of_infection_suspected(vc_above, vc_below): # Ausgabe des Anteils von InfectionSuspected True/False in den beiden Gruppen
     total_above = vc_above.sum()
     total_below = vc_below.sum()
     
-    share_above = (vc_above[True] / total_above * 100) if total_above > 0 else 0
-    share_below = (vc_below[False] / total_below * 100) if total_below > 0 else 0
+    share_above = (vc_above[True] / total_above * 100) if total_above > 0 else 0 # Division durch 0 vermeiden
+    share_below = (vc_below[False] / total_below * 100) if total_below > 0 else 0 # Division durch 0 vermeiden
     
-    print(f'Share of InfectionSuspected=True above thresholds: {share_above:.2f}% ({vc_above[True]} out of {total_above})')
+    print(f'Share of InfectionSuspected=True above thresholds: {share_above:.2f}% ({vc_above[True]} out of {total_above})') # Ausgabe mit 2 Nachkommastellen
     print(f'Share of InfectionSuspected=False below thresholds: {share_below:.2f}% ({vc_below[False]} out of {total_below})')
 
