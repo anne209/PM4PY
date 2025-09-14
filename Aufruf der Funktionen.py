@@ -218,7 +218,7 @@ fkp.print_share_of_infection_suspected(above_infection, below_infection) # Ausga
 
 
 # Import des IACS-Datensatzes
-log_iacs = fkp.import_xes('iacs_case.xes') # Datei aktuell nicht hochgeladen
+log_iacs = fkp.import_xes('iacs_case.xes')
 log_iacs.to_csv('log_iacs.csv', index=False)
 
 # Ausgabe statistischer Kennzahlen sowie von Head und Tail des Logs
