@@ -184,7 +184,7 @@ fkp.get_similar_activities(log_sepsis_sna)
 fkp.get_orga_roles(log_sepsis_sna)
 
 # Cluster-Analyse nach Übergabe von Arbeit durchführen und anzeigen
-fkp.cluster_handover(handover_sepsis)
+fkp.cluster_handover(handover_sepsis) '''
 
 # Herausfiltern aller Cases des Sepsis-Datensatzes, die mit ER-Registration beginnen (zur Überprüfung der eigenen Hypothese)
 filtered_log_start_sepsis = fkp.filter_by_start_activities(log_sepsis, start_act_sepsis, ['ER Registration'])
@@ -193,6 +193,26 @@ fkp.plot_start_activities(filtered_log_start_sepsis)
 filtered_log_start_sepsis = fkp.cut_log_at_activity(filtered_log_start_sepsis, 'ER Registration')
 fkp.create_dfg_from_log(filtered_log_start_sepsis)
 fkp.get_performance_dfg(filtered_log_start_sepsis)
+
+
+
+thresholds_sepsis = {'Leucocytes': 10,'CRP': 5, 'LacticAcid': 2.44}
+filtered_log_lab = fkp.filter_by_multiple_attributes(log_sepsis, thresholds_sepsis)
+filtered_log_below = log_sepsis[~log_sepsis.index.isin(filtered_log_lab.index)]
+
+
+fkp.get_start_end_act(filtered_log_lab) 
+fkp.plot_start_activities(filtered_log_lab) 
+fkp.plot_end_activities(filtered_log_lab)
+fkp.get_start_end_act(filtered_log_below) 
+fkp.plot_start_activities(filtered_log_below) 
+fkp.plot_end_activities(filtered_log_below)
+print(filtered_log_lab['InfectionSuspected'].value_counts())
+print(filtered_log_below['InfectionSuspected'].value_counts())
+above_infection, below_infection = fkp.plot_infection_suspected_comparison(filtered_log_lab, filtered_log_below)
+fkp.print_share_of_infection_suspected(above_infection, below_infection)
+
+
 '''
 # Funktionen aufrufen für nach Startaktivitäten gefiltertes Event Log Sepsis
 heur_net_sepsis_start, initial_marking_heur_sepsis_start, final_marking_heur_sepsis_start = fkp.run_heuristic_miner(filtered_log_start_sepsis)
